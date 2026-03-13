@@ -1,0 +1,119 @@
+---
+// @Isanchezv
+// src/pages/[locale]/legal/privacy.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { ui } from "@/i18n/ui";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const p = ui[lang].privacy;
+const doc = p.documento;
+const secciones = p.secciones;
+const contacto = p.contacto;
+
+const lastUpdateLabel = lang === 'es' ? "Última actualización" : "Last update";
+const tableLabels = {
+  cat: lang === 'es' ? "Categoría" : "Category",
+  data: lang === 'es' ? "Datos Específicos" : "Specific Data",
+  purp: lang === 'es' ? "Finalidad" : "Purpose"
+};
+---
+
+<Layout title={`${doc.titulo} | ${doc.entidad}`}>
+  <main class="min-h-screen bg-[#050505] text-white py-20 px-6">
+    <article class="max-w-4xl mx-auto">
+      
+      <header class="mb-16 border-b border-white/10 pb-10">
+        <div class="flex items-center gap-2 text-[#2ecc71] text-xs font-bold tracking-widest uppercase mb-10 opacity-80">
+          <a href={`/${lang}/`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            {t('buttons.back')}
+          </a>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+          {doc.hero.titulo} <span class="text-[#2ecc71]">{doc.titulo}</span>
+        </h1>
+        <p class="text-gray-400 text-lg mb-8">{doc.hero.subtitulo}</p>
+        
+        <div class="space-y-4 text-gray-300 leading-relaxed text-base border-l-2 border-[#2ecc71]/20 pl-4 mb-6">
+          {doc.preambulo.map((item) => (
+            <p>{item.texto}</p>
+          ))}
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+          <span class="text-xs bg-[#2ecc71]/10 text-[#2ecc71] px-3 py-1 rounded-full border border-[#2ecc71]/20 font-mono">v2.0</span>
+          <p class="text-sm text-gray-600 italic">{lastUpdateLabel}: {doc.ultima_actualizacion}</p>
+        </div>
+      </header>
+
+      <div class="space-y-20 text-gray-300 leading-relaxed">
+        {secciones.map((seccion) => (
+          <section class={seccion.id === "2" ? "bg-gradient-to-br from-[#111] to-[#0a0a0a] p-6 md:p-8 rounded-3xl border border-[#2ecc71]/20 relative overflow-hidden" : ""}>
+            
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <span class="text-[#2ecc71]">0{seccion.id}.</span> {seccion.titulo}
+            </h2>
+            
+            {seccion.contenido && (
+              <div class="space-y-4 mb-8 text-gray-400">
+                {seccion.contenido.map((parrafo) => <p>{parrafo}</p>)}
+              </div>
+            )}
+
+            {seccion.lista_detallada && (
+              <ul class="grid md:grid-cols-2 gap-4">
+                {seccion.lista_detallada.map((item) => (
+                  <li class="flex gap-4 bg-black/40 p-5 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-colors">
+                    <span class="text-[#2ecc71] shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </span>
+                    <div>
+                      <strong class="text-white block text-sm mb-1">{item.titulo}</strong>
+                      <p class="text-sm text-gray-500">{item.texto}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {seccion.tabla_datos && (
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm border-separate border-spacing-0 border border-white/10 rounded-xl overflow-hidden">
+                  <thead>
+                    <tr class="bg-white/5 text-left text-[#2ecc71]">
+                      <th class="p-4 border-b border-white/10 whitespace-nowrap">{tableLabels.cat}</th>
+                      <th class="p-4 border-b border-white/10 whitespace-nowrap">{tableLabels.data}</th>
+                      <th class="p-4 border-b border-white/10 whitespace-nowrap">{tableLabels.purp}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {seccion.tabla_datos.map((fila) => (
+                      <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4 border-b border-white/5 font-bold text-white whitespace-nowrap">{fila.categoria}</td>
+                        <td class="p-4 border-b border-white/5 italic text-gray-500">{fila.datos}</td>
+                        <td class="p-4 border-b border-white/5 text-gray-400">{fila.finalidad}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+          </section>
+        ))}
+      </div>
+    </article>
+  </main>
+</Layout>
+
+<style>
+  article {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+</style>

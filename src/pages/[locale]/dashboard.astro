@@ -1,0 +1,217 @@
+---
+// @Isanchezv
+// src/pages/[locale]/dashboard/index.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/signin`);
+
+const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+  access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+});
+
+if (sessionError || !sessionData.session) return Astro.redirect(`/${lang}/signin`);
+const user = sessionData.session.user;
+
+if (Astro.request.method === "POST") {
+  try {
+    const body = await Astro.request.json();
+    const { courseId } = body;
+
+    const { data: existingLike } = await supabase
+      .from("course_likes")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId)
+      .single();
+
+    if (existingLike) {
+      await supabase.from("course_likes").delete().eq("id", existingLike.id);
+      return new Response(JSON.stringify({ liked: false }), { status: 200 });
+    } else {
+      await supabase.from("course_likes").insert({ user_id: user.id, course_id: courseId });
+      return new Response(JSON.stringify({ liked: true }), { status: 200 });
+    }
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+
+const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+const { data: coursesData } = await supabase
+  .from("courses")
+  .select(`*, categories (name), lessons (id)`)
+  .eq("is_published", true)
+  .order("created_at", { ascending: false });
+
+const filteredCourses = coursesData?.filter(course => {
+  if (!course.required_role) return true;
+  
+  if (profile?.role === 'admin') return true;
+  
+  try {
+    const requiredRoles = typeof course.required_role === 'string' ? JSON.parse(course.required_role) : course.required_role;
+    return Array.isArray(requiredRoles) && requiredRoles.includes(profile?.role);
+  } catch {
+    return true;
+  }
+}) || [];
+
+const { data: userLikes } = await supabase.from('course_likes').select('course_id').eq('user_id', user.id);
+const likedCourseIds = new Set(userLikes?.map(l => l.course_id));
+
+let completedCoursesIds = new Set();
+if (user.id && filteredCourses) {
+  const { data: progress } = await supabase
+    .from("lesson_progress")
+    .select("lesson_id")
+    .eq("user_id", user.id)
+    .eq("completed", true);
+
+  const completedLessonIds = new Set(progress?.map(p => p.lesson_id));
+
+  filteredCourses.forEach(course => {
+    const totalLessons = course.lessons?.length || 0;
+    if (totalLessons === 0) return;
+    const completedInThisCourse = course.lessons.filter(l => completedLessonIds.has(l.id)).length;
+    if (completedInThisCourse === totalLessons) {
+      completedCoursesIds.add(course.id);
+    }
+  });
+}
+---
+
+<Layout title={t('dashboard.courses.title')}>
+  <main class="max-w-7xl mx-auto p-6 md:p-12 space-y-12">
+    <header class="relative p-10 rounded-[3rem] bg-linear-to-br from-blue-600/20 to-transparent border border-white/5 overflow-hidden">
+      <div class="relative z-10">
+        <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter">
+          {t('dashboard.welcome')} <span class="text-blue-500">{profile?.full_name || profile?.username || t('dashboard.defaultUser')}</span>
+        </h1>
+        <p class="text-gray-400 mt-2 font-medium italic uppercase text-[10px] tracking-widest">
+          {profile?.role === 'admin' ? t('dashboard.roles.admin') : t('dashboard.roles.student')}
+        </p>
+      </div>
+    </header>
+
+    <div id="course-grid" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {filteredCourses.map((course) => {
+        const isFinished = completedCoursesIds.has(course.id);
+        const isLiked = likedCourseIds.has(course.id);
+        const providesCertificate = course.has_certificate ?? false;
+
+        return (
+          <a href={`/${lang}/courses/${course.id}`} class={`course-card group relative flex flex-col justify-between p-8 rounded-[2.5rem] bg-[#0a0a0a] border transition-all duration-500 hover:bg-[#0f0f0f] overflow-hidden ${isFinished ? 'border-green-500/30 shadow-[0_0_30px_rgba(34,197,94,0.05)]' : 'border-white/3 hover:border-blue-500/40'}`}>
+            <div class={`absolute -top-24 -right-24 w-48 h-48 blur-[60px] transition-all pointer-events-none ${isFinished ? 'bg-green-600/10' : 'bg-blue-600/5 group-hover:bg-blue-600/15'}`}></div>
+            
+            <div>
+              <div class="flex justify-between items-start mb-6">
+                <div class="flex flex-col gap-2">
+                  <span class="w-fit px-2.5 py-1 rounded-md bg-white/5 text-gray-500 text-[9px] font-black uppercase tracking-widest border border-white/5">{course.level}</span>
+                  {isFinished && (
+                    <span class="flex items-center gap-1.5 text-[9px] font-black uppercase italic text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-md">
+                      <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> {t('dashboard.courses.completed')}
+                    </span>
+                  )}
+                </div>
+                <button type="button" data-like-btn data-course-id={course.id} data-liked={isLiked ? "true" : "false"} class="relative z-20 p-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-pink-500/50 transition-all group/like active:scale-90">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class={`transition-all duration-300 ${isLiked ? 'fill-pink-500 stroke-pink-500 scale-110' : 'fill-transparent stroke-gray-500 group-hover/like:stroke-pink-400'}`} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.046 3 5.5L12 21Z"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <h3 class={`text-2xl font-black text-white tracking-tight italic leading-none uppercase transition-colors ${isFinished ? '' : 'group-hover:text-blue-400'}`}>{course.title}</h3>
+              
+              <div class="mt-3 mb-4">
+                {course.categories?.name && (
+                  <div class={`inline-flex items-center px-3 py-1.5 rounded-xl border italic ${isFinished ? 'bg-green-500/5 border-green-500/10' : 'bg-blue-500/10 border-blue-500/20'}`}>
+                    <span class={`text-[10px] font-black uppercase tracking-widest ${isFinished ? 'text-green-600' : 'text-blue-400'}`}>{course.categories.name}</span>
+                  </div>
+                )}
+              </div>
+              {course.description && <p class="text-gray-500 text-xs italic leading-relaxed mb-6 line-clamp-2 group-hover:text-gray-400 transition-colors">{course.description}</p>}
+            </div>
+
+            <footer class={`flex items-center justify-between pt-5 border-t ${isFinished ? 'border-green-500/10' : 'border-white/3'}`}>
+              <div class="flex-1">
+                {course?.team && (
+                  <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                    <span class="text-[9px] font-black text-blue-500/60 uppercase tracking-widest italic">By:</span>
+                    <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">{course.team}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <span class={`text-[10px] font-black transition-all duration-300 transform ${isFinished ? 'translate-x-0' : 'translate-x-2 group-hover:translate-x-0'} uppercase italic ${isFinished ? 'text-green-500' : 'text-blue-500 opacity-0 group-hover:opacity-100'}`}>
+                  {isFinished 
+                    ? (providesCertificate ? t('dashboard.courses.actions.certificate') : t('dashboard.courses.actions.completed')) 
+                    : t('dashboard.courses.actions.access')}
+                </span>
+                
+                <svg class={`w-3 h-3 transition-all duration-300 ${isFinished ? 'text-green-500' : 'text-blue-500 opacity-0 group-hover:opacity-100'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  {isFinished && providesCertificate ? (
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  ) : (
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  )}
+                </svg>
+              </div>
+            </footer>
+          </a>
+        )
+      })}
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const likeButtons = document.querySelectorAll('[data-like-btn]');
+  likeButtons.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const courseId = btn.getAttribute('data-course-id');
+      const isLiked = btn.getAttribute('data-liked') === 'true';
+      const svg = btn.querySelector('svg');
+
+      const updateUI = (state) => {
+        btn.setAttribute('data-liked', String(state));
+        if (state) {
+          svg.classList.add('fill-pink-500', 'stroke-pink-500', 'scale-110');
+          svg.classList.remove('fill-transparent', 'stroke-gray-500');
+        } else {
+          svg.classList.remove('fill-pink-500', 'stroke-pink-500', 'scale-110');
+          svg.classList.add('fill-transparent', 'stroke-gray-500');
+        }
+      };
+
+      updateUI(!isLiked);
+
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId }),
+        });
+        
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        updateUI(data.liked);
+      } catch (error) {
+        console.error("Fallo en el Like:", error);
+        updateUI(isLiked);
+      }
+    });
+  });
+</script>

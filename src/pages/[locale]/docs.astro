@@ -1,0 +1,165 @@
+---
+// @Isanchezv
+// src/pages/[locale]/docs.astro
+import Layout from "@/layouts/Layout.astro";
+import * as ReadmeContent from "../../../README.md"; 
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const { Content } = ReadmeContent;
+const headings = await ReadmeContent.getHeadings();
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Layout title="Documentación">
+  <div class="bg-[#050505] min-h-screen">
+    <div class="absolute top-0 left-0 w-full h-[500px] bg-linear-to-b from-[#2ecc71]/5 to-transparent pointer-events-none"></div>
+
+    <main class="relative pt-24 pb-32 px-6">
+      <div class="max-w-5xl mx-auto">
+        
+        <div class="flex items-center gap-2 text-[#2ecc71] text-xs font-bold tracking-widest uppercase mb-10 opacity-80">
+          <a href={`/${lang}/`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            {t('buttons.back')}
+          </a>
+        </div>
+
+        <article class="documentation-container">
+          <section class="prose prose-invert prose-green max-w-none 
+            prose-h1:text-5xl prose-h1:font-black prose-h1:tracking-tight prose-h1:mb-12
+            prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-4 prose-h2:mt-16
+            prose-p:text-gray-400 prose-p:leading-relaxed
+            prose-li:text-gray-400
+            prose-strong:text-white prose-strong:font-bold
+            prose-code:text-[#2ecc71] prose-code:bg-[#2ecc71]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+            prose-pre:bg-[#0d0d0d] prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl prose-pre:shadow-2xl">
+            
+            <Content />
+            
+          </section>
+        </article>
+
+        <footer class="mt-24 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div class="text-gray-500 text-sm italic">
+            Ultima sincronización con el repositorio principal: 2026
+          </div>
+          <a 
+            href="https://github.com/isanchezv07/BRAIN-BOX-FTC" 
+            target="_blank"
+            class="group flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-full transition-all hover:scale-105"
+          >
+            <svg class="w-5 h-5 text-gray-400 group-hover:text-[#2ecc71]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.11.825-.26.825-.58 0-.285-.01-1.23-.015-2.235-3.015.555-3.754-1.455-3.994-2.13-.135-.345-.72-1.455-1.23-1.74-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.475-1.335-5.475-5.94 0-1.31.465-2.385 1.235-3.225-.12-.305-.535-1.53.12-3.18 0 0 1.005-.32 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.245 2.875.12 3.18.77.84 1.235 1.91 1.235 3.225 0 4.62-2.81 5.635-5.485 5.925.43.37.815 1.1.815 2.22 0 1.605-.015 2.895-.015 3.295 0 .32.22.695.825.575C20.565 21.795 24 17.31 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span class="text-sm font-medium">Contribuir en GitHub</span>
+          </a>
+        </footer>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<style is:global>
+  .documentation-container {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .documentation-container ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .documentation-container li {
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .documentation-container h2 + ul, 
+  .documentation-container h3 + ul {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 1.5rem !important;
+    margin-left: 0.5rem;
+  }
+
+  .documentation-container a {
+    color: #2ecc71 !important;
+    text-decoration: none !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .documentation-container a:hover {
+    filter: brightness(1.2);
+    text-decoration: underline !important;
+  }
+
+  .documentation-container hr {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 3rem 0;
+  }
+
+  .documentation-container h1 {
+    font-size: 2.5rem !important;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem !important;
+    color: white !important;
+  }
+
+  .documentation-container h2 {
+    font-size: 1.8rem !important;
+    margin-top: 4rem !important;
+    margin-bottom: 1.5rem !important;
+    color: #f8fafc !important;
+  }
+
+  .documentation-container p img {
+    display: inline-block;
+    height: 28px; 
+    margin-right: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+  }
+
+  .documentation-container table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 2rem 0;
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .documentation-container th {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 16px;
+    color: #2ecc71;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .documentation-container td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
+
+  .documentation-container pre {
+    padding: 1.5rem !important;
+    border-radius: 12px !important;
+    background-color: #0d0d0d !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+</style>

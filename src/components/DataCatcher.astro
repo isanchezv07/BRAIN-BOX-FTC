@@ -1,0 +1,197 @@
+---
+// @Isanchezv
+// src/components/DataCatcher.astro
+interface Props {
+  t: any;
+  lang: string;
+}
+
+const { t, lang } = Astro.props;
+---
+
+<div class="game-wrapper mt-8 group relative">
+  <div id="game-terminal" class="relative overflow-hidden border-2 border-blue-500/40 bg-[#050505] shadow-[0_0_50px_rgba(59,130,246,0.15)]">
+    
+    <div class="flex items-center justify-between bg-blue-500/10 border-b border-blue-500/30 px-4 py-1.5 font-mono">
+      <div class="flex items-center gap-3">
+        <div class="flex gap-1">
+          <div class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_red]"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+        </div>
+        <span class="text-[8px] md:text-[10px] text-blue-400 font-bold tracking-widest uppercase animate-pulse">
+          Sub_Routine: Data_Harvest_v2.0
+        </span>
+      </div>
+      <div class="flex gap-4 text-[10px] font-black italic">
+        <span class="text-blue-500/50 uppercase">Level: <span id="game-level" class="text-blue-300">01</span></span>
+        <span class="text-blue-400 uppercase tracking-tighter">Score: <span id="game-score" class="text-white">0000</span></span>
+      </div>
+    </div>
+
+    <div id="game-container" class="relative w-[320px] h-[200px] md:w-[600px] md:h-[300px] cursor-none">
+      <canvas id="gameCanvas" class="w-full h-full"></canvas>
+      
+      <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%]"></div>
+
+      <div id="game-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md z-30 transition-all duration-700">
+        <div class="mb-6 text-center">
+            <h3 class="text-blue-500 font-black text-2xl md:text-4xl italic tracking-tighter uppercase mb-2">Data Catcher</h3>
+            <p class="text-blue-400/60 text-[9px] uppercase tracking-[0.3em]">Recupera los paquetes antes de la desconexión</p>
+        </div>
+        <button id="start-btn" class="group relative px-8 py-3 overflow-hidden">
+            <div class="absolute inset-0 bg-blue-600 skew-x-[-15deg] group-hover:bg-white transition-colors"></div>
+            <span class="relative text-black font-black uppercase italic tracking-[0.2em] text-xs">Initialize_Session</span>
+        </button>
+      </div>
+
+      <div id="game-over" class="absolute inset-0 flex-col items-center justify-center bg-red-950/95 backdrop-blur-xl hidden z-40">
+        <h2 class="glitch-text text-red-500 font-black text-5xl italic uppercase tracking-tighter mb-2" data-text="CRITICAL_FAILURE">CRITICAL_FAILURE</h2>
+        <p id="final-stats" class="text-white/60 font-mono text-[10px] uppercase mb-6 tracking-widest"></p>
+        <button id="retry-btn" class="border-2 border-red-500 px-6 py-2 text-red-500 font-bold uppercase text-[10px] hover:bg-red-500 hover:text-white transition-all">Reboot_System</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  const scoreEl = document.getElementById('game-score')!;
+  const levelEl = document.getElementById('game-level')!;
+  const overlay = document.getElementById('game-overlay')!;
+  const gameOverEl = document.getElementById('game-over')!;
+  const finalStats = document.getElementById('final-stats')!;
+  const startBtn = document.getElementById('start-btn')!;
+  const retryBtn = document.getElementById('retry-btn')!;
+
+  let score = 0;
+  let level = 1;
+  let gameActive = false;
+  let playerX = 0;
+  let items: any[] = [];
+  let animationId: number;
+  let spawnRate = 0.95;
+
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    playerX = canvas.width / 2;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  class DataPacket {
+    x: number; y: number; speed: number; type: string; val: string; color: string;
+    constructor() {
+      this.x = Math.random() * (canvas.width - 40) + 20;
+      this.y = -30;
+      this.speed = (2 + Math.random() * 2) * (1 + level * 0.2);
+      const rand = Math.random();
+      if (rand > 0.85) { this.type = 'virus'; this.val = 'NULL'; this.color = '#ff003c'; }
+      else if (rand > 0.70) { this.type = 'boost'; this.val = '>>'; this.color = '#00ff9f'; }
+      else { this.type = 'data'; this.val = Math.random() > 0.5 ? '01' : '10'; this.color = '#00b3ff'; }
+    }
+    draw() {
+      ctx.font = `black 12px 'Space Mono', monospace`;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.color;
+      ctx.fillStyle = this.color;
+      ctx.fillText(this.val, this.x, this.y);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function update() {
+    if (!gameActive) return;
+    ctx.fillStyle = 'rgba(5, 5, 5, 0.3)'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const gradient = ctx.createLinearGradient(playerX - 30, 0, playerX + 30, 0);
+    gradient.addColorStop(0, 'rgba(0, 179, 255, 0)');
+    gradient.addColorStop(0.5, '#00b3ff');
+    gradient.addColorStop(1, 'rgba(0, 179, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(playerX - 40, canvas.height - 20, 80, 3);
+    
+    ctx.fillStyle = 'rgba(0, 179, 255, 0.1)';
+    ctx.fillRect(playerX - 1, 0, 2, canvas.height - 20);
+
+    items.forEach((item, i) => {
+      item.y += item.speed;
+      item.draw();
+
+      if (item.y > canvas.height - 25 && item.x > playerX - 45 && item.x < playerX + 45) {
+        if (item.type === 'virus') endGame();
+        else if (item.type === 'boost') { score += 50; levelUp(); items.splice(i, 1); }
+        else { score += 10; items.splice(i, 1); if(score % 200 === 0) levelUp(); }
+        scoreEl.textContent = score.toString().padStart(4, '0');
+      }
+
+      if (item.y > canvas.height) items.splice(i, 1);
+    });
+
+    if (Math.random() > spawnRate) items.push(new DataPacket());
+    animationId = requestAnimationFrame(update);
+  }
+
+  function levelUp() {
+    level++;
+    levelEl.textContent = level.toString().padStart(2, '0');
+    spawnRate = Math.max(0.8, spawnRate - 0.01);
+  }
+
+  function startGame() {
+    score = 0; level = 1; items = []; spawnRate = 0.95;
+    scoreEl.textContent = '0000';
+    levelEl.textContent = '01';
+    gameActive = true;
+    overlay.classList.add('opacity-0', 'invisible');
+    gameOverEl.classList.add('hidden');
+    update();
+  }
+
+  function endGame() {
+    gameActive = false;
+    cancelAnimationFrame(animationId);
+    finalStats.textContent = `Score: ${score} // Level: ${level}`;
+    gameOverEl.classList.remove('hidden');
+    gameOverEl.classList.add('flex');
+  }
+
+  const handleMove = (x: number) => {
+    const rect = canvas.getBoundingClientRect();
+    playerX = x - rect.left;
+  };
+
+  canvas.addEventListener('mousemove', (e) => handleMove(e.clientX));
+  canvas.addEventListener('touchmove', (e) => {
+    handleMove(e.touches[0].clientX);
+    e.preventDefault();
+  }, { passive: false });
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+  .glitch-text {
+    position: relative;
+    text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75),
+                -0.025em -0.05em 0 rgba(0, 255, 0, 0.75),
+                0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+    animation: glitch 500ms infinite;
+  }
+
+  @keyframes glitch {
+    0% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+    14% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+    15% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+    49% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+    50% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+    99% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+    100% { text-shadow: -0.025em 0 0 rgba(255,0,0,.75), -0.025em -0.025em 0 rgba(0,255,0,.75), -0.025em -0.05em 0 rgba(0,0,255,.75); }
+  }
+</style>

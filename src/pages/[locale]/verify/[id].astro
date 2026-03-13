@@ -1,0 +1,75 @@
+---
+// @Isanchezv
+// src/pages/[locale]/verify/[id].astro
+import Layout from "@/layouts/Layout.astro";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const { id } = Astro.params;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const supabaseAdmin = getSupabaseAdmin();
+
+const { data: cert, error } = await supabaseAdmin
+  .from('certificates')
+  .select('*')
+  .eq('id', id)
+  .single();
+
+const formattedDate = cert 
+  ? new Date(cert.issued_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    }) 
+  : '';
+---
+
+<Layout title={`${t('verify.title')} - BRAIN BOX FTC`}>
+  <main class="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(59,130,246,0.05),_transparent)]"></div>
+    
+    {cert ? (
+      <div class="max-w-md w-full bg-[#0a0a0a] border border-white/5 p-10 rounded-[3rem] text-center shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
+        <div class="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/20">
+          <svg class="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        
+        <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">{t('verify.valid')}</h1>
+        <p class="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] italic mb-8">{t('verify.registry')}</p>
+        
+        <div class="space-y-5 text-left bg-white/5 p-6 rounded-3xl border border-white/5">
+          <div>
+            <p class="text-[9px] text-blue-500 font-black uppercase italic tracking-widest">{t('verify.student')}</p>
+            <p class="text-white font-bold text-xl leading-tight">{cert.student_name}</p>
+          </div>
+          <div>
+            <p class="text-[9px] text-blue-500 font-black uppercase italic tracking-widest">{t('verify.course')}</p>
+            <p class="text-white font-bold">{cert.course_title}</p>
+          </div>
+          <div>
+            <p class="text-[9px] text-blue-500 font-black uppercase italic tracking-widest">{t('verify.date')}</p>
+            <p class="text-gray-400 font-bold text-sm">{formattedDate}</p>
+          </div>
+        </div>
+        
+        <p class="mt-8 text-[9px] font-mono text-gray-600 truncate italic">ID: {cert.id}</p>
+      </div>
+    ) : (
+      <div class="max-w-md w-full bg-[#0a0a0a] border border-red-500/20 p-10 rounded-[3rem] text-center relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+           <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-black text-red-500 italic uppercase mb-4">{t('verify.invalid')}</h1>
+        <p class="text-gray-400 text-sm italic">{t('verify.error_desc')}</p>
+        <a href={`/${lang}`} class="inline-block mt-8 text-blue-500 font-black uppercase italic text-xs tracking-widest hover:text-white transition-colors">
+          {t('verify.back_home')}
+        </a>
+      </div>
+    )}
+  </main>
+</Layout>

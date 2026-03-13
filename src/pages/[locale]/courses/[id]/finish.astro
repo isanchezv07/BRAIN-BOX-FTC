@@ -1,0 +1,201 @@
+---
+// @Isanchezv
+// src/pages/[locale]/courses/[id]/finish.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const { id: courseId } = Astro.params;
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/signin`);
+
+const { data: sessionData, error: authError } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+});
+
+const user = sessionData?.session?.user;
+
+if (!user || authError) return Astro.redirect(`/${lang}/signin`);
+
+const { data: allLessons } = await supabase
+    .from("lessons")
+    .select("id, quiz_data")
+    .eq("course_id", courseId)
+    .order("order_index");
+
+const { data: userProgress } = await supabase
+    .from("lesson_progress")
+    .select("lesson_id, completed, quiz_score")
+    .eq("user_id", user.id);
+
+let canAccessFinish = true;
+if (allLessons && userProgress) {
+    for (const lesson of allLessons) {
+        const progress = userProgress.find(p => p.lesson_id === lesson.id);
+        const hasQuiz = lesson.quiz_data !== null && lesson.quiz_data !== undefined;
+        
+        if (hasQuiz) {
+            if (!progress || !progress.completed || (progress.quiz_score !== null && progress.quiz_score < 70)) {
+                canAccessFinish = false;
+                break;
+            }
+        } else {
+            if (!progress || !progress.completed) {
+                canAccessFinish = false;
+                break;
+            }
+        }
+    }
+} else {
+    canAccessFinish = false;
+}
+
+if (!canAccessFinish) {
+    return Astro.redirect(`/${lang}/courses/${courseId}`);
+}
+
+const { data: grade } = await supabase
+    .from("course_grades")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("course_id", courseId)
+    .single();
+
+const { data: lessons } = await supabase
+    .from("lessons")
+    .select("quiz_data")
+    .eq("course_id", courseId);
+
+const hasQuizzes = lessons?.some(l => l.quiz_data !== null && l.quiz_data !== undefined) ?? false;
+
+let finalScore = 0;
+let isApproved = false;
+
+if (grade) {
+    finalScore = grade.final_avg;
+} else if (!hasQuizzes) {
+    finalScore = 100;
+} else {
+    finalScore = 0;
+}
+
+isApproved = finalScore >= 70;
+
+const { data: course } = await supabase
+    .from("courses")
+    .select("title, has_certificate")
+    .eq("id", courseId)
+    .single();
+    
+const providesCertificate = course?.has_certificate ?? false;
+---
+
+<Layout title={t('results.page_title')}>
+    <main class="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(59,130,246,0.03),_transparent)] pointer-events-none"></div>
+
+        <div class="max-w-xl w-full text-center z-10">
+            <h1 class="text-white text-5xl md:text-7xl font-black italic uppercase tracking-tighter mb-4 leading-none animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {isApproved ? t('results.congrats') : t('results.try_again')}
+            </h1>
+            
+            <p class="text-gray-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-12 italic">
+                {t('results.finished_course')}: <span class="text-gray-300">{course?.title}</span>
+            </p>
+
+            <div class="bg-[#080808] border border-white/5 rounded-[3rem] p-12 mb-12 shadow-2xl relative group overflow-hidden transition-all hover:border-blue-500/20">
+                <div class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                
+                <span class="relative z-10 text-gray-500 text-[10px] font-black uppercase tracking-[0.4em]">
+                    {hasQuizzes ? t('results.final_average') : t('results.accreditation_status')}
+                </span>
+                
+                <div class={`relative z-10 text-8xl font-black mt-4 mb-6 tracking-tighter ${isApproved ? 'text-yellow-500' : 'text-red-500'}`}>
+                    {finalScore}%
+                </div>
+                
+                <div class="relative z-10">
+                    {isApproved ? (
+                        <div class="flex flex-col items-center gap-2">
+                            <p class="text-green-500 text-xs font-bold uppercase italic tracking-widest flex items-center gap-2">
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                {t('results.status_approved')}
+                            </p>
+                            {!hasQuizzes && (
+                                <span class="text-[8px] text-gray-600 uppercase font-bold tracking-tighter">
+                                    {t('results.completion_by_reading')}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <p class="text-red-500 text-xs font-bold uppercase italic tracking-widest flex items-center gap-2 justify-center">
+                            <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                            {t('results.status_failed')}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 relative z-10">
+                {isApproved ? (
+                    <>
+                        {providesCertificate ? (
+                            <a 
+                                href={`/${lang}/certificate/${courseId}`} 
+                                class="group bg-yellow-500 text-black px-12 py-6 rounded-2xl font-black uppercase italic hover:bg-white hover:scale-[1.02] transition-all shadow-xl shadow-yellow-500/10 flex items-center justify-center gap-3"
+                            >
+                                {t('results.btn_certificate')}
+                                <svg class="group-hover:translate-x-1 transition-transform" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        ) : (
+                            <div class="bg-blue-600/20 border border-blue-500/30 p-6 rounded-2xl">
+                                <p class="text-blue-400 text-sm font-black uppercase italic tracking-widest mb-2">
+                                    {t('results.course_completed')} </p>
+                                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-tighter">
+                                    {t('results.no_certificate_badge')} </p>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div class="space-y-4">
+                        <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest italic px-8">
+                            {t('results.retry_hint')}
+                        </p>
+                        <a 
+                            href={`/${lang}/courses/${courseId}`} 
+                            class="inline-block bg-white/5 border border-white/10 text-white px-10 py-5 rounded-2xl font-black uppercase italic hover:bg-white/10 transition-all"
+                        >
+                            {t('results.btn_review')}
+                        </a>
+                    </div>
+                )}
+                
+                <a 
+                    href={`/${lang}/dashboard`} 
+                    class="mt-4 text-gray-600 text-[9px] font-black uppercase tracking-[0.3em] hover:text-white transition-all italic"
+                >
+                    {t('results.btn_back')}
+                </a>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    @keyframes fadeInCustom {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    main {
+        animation: fadeInCustom 0.8s ease-out forwards;
+    }
+</style>

@@ -1,0 +1,436 @@
+---
+// @Isanchezv
+// src/pages/[locale]/admin/dashboard.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase, getSupabaseAdmin } from "@/lib/supabase"; 
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+import UserManagement from "@/components/admin/UserManagement.astro";
+import CategoryManager from "@/components/admin/CategoryManager.astro";
+import CourseManager from "@/components/admin/CourseManager.astro";
+import LessonManager from "@/components/admin/LessonManager.astro";
+import ViewLogs from "@/components/admin/ViewLogs.astro";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const adminPath = `/${lang}/admin/dashboard`;
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/signin`);
+
+const supabaseAdmin = getSupabaseAdmin();
+
+const { data: { session } } = await supabaseAdmin.auth.setSession({
+  access_token: accessToken.value, 
+  refresh_token: refreshToken.value,
+});
+
+if (!session) return Astro.redirect(`/${lang}/signin`);
+
+const { data: profile } = await supabaseAdmin
+  .from("profiles")
+  .select("role")
+  .eq("id", session.user.id)
+  .single();
+
+if (profile?.role !== "admin") return Astro.redirect(`/${lang}/dashboard`);
+
+const { data: auditData } = await supabaseAdmin
+  .from("audit_logs")
+  .select(`
+    *,
+    profiles:target_user_id(username),
+    mod:moderator_id(username)
+  `)
+  .order('created_at', { ascending: false });
+
+const isAdmin = profile.role === "admin";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("_action");
+  const id = form.get("id");
+
+  const hasCertificate = form.get("has_certificate") === "on";
+
+  try {
+    switch (action) {
+      case "update-user-status":
+        const newStatus = form.get("status")?.toString() || "active";
+        let banUntil = null;
+
+        if (newStatus === "temporal-ban") {
+          const minutes = parseInt(
+            form.get("ban_duration_custom")?.toString() || "60"
+          );
+          banUntil = new Date(Date.now() + minutes * 60000).toISOString();
+        }
+
+        await supabaseAdmin
+          .from("profiles")
+          .update({ status: newStatus, ban_until: banUntil })
+          .eq("id", id);
+
+        if (newStatus.includes("ban")) {
+          await supabaseAdmin.auth.admin.signOut(id);
+        }
+
+        return Astro.redirect(`${adminPath}?tab=users`);
+      case "update-profile-role":
+        await supabaseAdmin.from("profiles").update({ role: form.get("role") }).eq("id", id);
+        break;
+
+      case "update-course":
+        const requiredRoles = form.getAll("required_roles");
+        
+        await supabaseAdmin.from("courses").update({ 
+          title: form.get("title"), 
+          description: form.get("description"),
+          category_id: form.get("category_id"), 
+          level: form.get("level"),
+          team: form.get("team"),
+          has_certificate: hasCertificate,
+          required_role: requiredRoles && requiredRoles.length > 0 ? JSON.stringify(requiredRoles) : null
+        }).eq("id", id);
+        return Astro.redirect(`${adminPath}?tab=courses`);
+
+      case "update-lesson":
+        console.log("DEBUG: Update lesson form data received");
+        const quizId = form.get("quiz_id");
+        const rawLimit = form.get("quiz_questions_limit");
+        const quizLimit = rawLimit && rawLimit.toString().trim() !== "" ? Number(rawLimit) : null;
+        
+        console.log("DEBUG: quizId:", quizId);
+        console.log("DEBUG: rawLimit:", rawLimit, "quizLimit:", quizLimit);
+        console.log("DEBUG: quiz_timer_enabled:", form.get("quiz_timer_enabled"));
+        console.log("DEBUG: quiz_timer_seconds:", form.get("quiz_timer_seconds"));
+        
+        const lData = { 
+          course_id: form.get("course_id"), title: form.get("title"), content: form.get("content"), 
+          order_index: Number(form.get("order_index")), is_free: form.get("is_free") === "true",
+          quiz_data: quizId && quizId.toString().trim() !== "" ? `${quizId.toString()}.json` : null,
+          quiz_timer_enabled: form.get("quiz_timer_enabled") === "true",
+          quiz_timer_seconds: Number(form.get("quiz_timer_seconds") || 30),
+          quiz_questions_limit: quizLimit
+        };
+        
+        console.log("DEBUG: Final lesson data to update:", lData);
+        
+        const { error: updateError } = await supabaseAdmin.from("lessons").update(lData).eq("id", id);
+        console.log("DEBUG: Update error:", updateError);
+        
+        return Astro.redirect(`${adminPath}?course=${form.get("course_id")}&tab=courses`);
+
+      case "create-course":
+        const createRequiredRoles = form.getAll("required_roles");
+        
+        const { data: nc } = await supabaseAdmin.from("courses").insert({ 
+          title: form.get("title"), 
+          description: form.get("description"),
+          category_id: form.get("category_id"), 
+          level: form.get("level"), 
+          team: form.get("team"),
+          has_certificate: hasCertificate,
+          required_role: createRequiredRoles && createRequiredRoles.length > 0 ? JSON.stringify(createRequiredRoles) : null,
+          created_by: session.user.id 
+        }).select().single();
+        if (nc) return Astro.redirect(`${adminPath}?course=${nc.id}&tab=courses`);
+        break;
+
+      case "create-lesson":
+        await supabaseAdmin.from("lessons").insert({
+          course_id: form.get("course_id"), title: form.get("title"), content: form.get("content"),
+          order_index: Number(form.get("order_index")), is_free: form.get("is_free") === "true"
+        });
+        return Astro.redirect(`${adminPath}?course=${form.get("course_id")}&tab=courses`);
+
+      case "delete-course":
+        await supabaseAdmin.from("courses").delete().eq("id", id);
+        return Astro.redirect(`${adminPath}?tab=courses`);
+      
+      case "delete-lesson":
+        await supabaseAdmin.from("lessons").delete().eq("id", id);
+        break;
+
+      case "upsert-category":
+        const catData = { name: form.get("name"), description: form.get("description") };
+        id ? await supabaseAdmin.from("categories").update(catData).eq("id", id) : await supabaseAdmin.from("categories").insert(catData);
+        return Astro.redirect(`${adminPath}?tab=categories`);
+      
+      case "delete-category":
+        await supabaseAdmin.from("categories").delete().eq("id", id);
+        return Astro.redirect(`${adminPath}?tab=categories`);
+
+      case "publish-course":
+        await supabaseAdmin.from("courses").update({ is_published: true }).eq("id", id);
+        return Astro.redirect(`${adminPath}?tab=courses`);
+
+      case "unpublish-course":
+        await supabaseAdmin.from("courses").update({ is_published: false }).eq("id", id);
+        return Astro.redirect(`${adminPath}?tab=courses`);
+    }
+  } catch (e) { 
+    console.error("Error en acción Admin:", e);
+  }
+}
+
+const urlParams = new URLSearchParams(Astro.url.search);
+const selectedCourseId = urlParams.get("course");
+const editCourseId = urlParams.get("editCourse");
+const editLessonId = urlParams.get("edit");
+
+const [{ data: profiles }, { data: categories }, { data: courses }] = await Promise.all([
+  supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
+  supabaseAdmin.from("categories").select("*").order("name"),
+  supabaseAdmin.from("courses").select("*, categories(name)").order("created_at", { ascending: false })
+]);
+
+const courseToEdit = editCourseId ? courses?.find(c => c.id === editCourseId) : null;
+let lessons = [];
+if (selectedCourseId) {
+  const { data } = await supabaseAdmin.from("lessons").select("*").eq("course_id", selectedCourseId).order("order_index");
+  lessons = data || [];
+}
+const lessonToEdit = editLessonId ? lessons.find(l => l.id === editLessonId) : null;
+
+const months = t('admin.months');
+const userGrowthData = new Array(12).fill(0);
+const firstStats = { FLL: 0, FTC: 0, FRC: 0 };
+const countryCounts: Record<string, number> = {};
+
+const bannedCount = profiles?.filter(p => p.status === 'perma-ban' || p.status === 'banned').length || 0;
+const tempBannedCount = profiles?.filter(p => p.status === 'temporal-ban').length || 0;
+
+profiles?.forEach(p => {
+    const m = new Date(p.created_at).getMonth();
+    userGrowthData[m]++;
+    if (p.first_categories && Array.isArray(p.first_categories)) {
+        p.first_categories.forEach((cat) => {
+            if (cat in firstStats) firstStats[cat as keyof typeof firstStats]++;
+        });
+    }
+    if (p.country) {
+        countryCounts[p.country] = (countryCounts[p.country] || 0) + 1;
+    }
+});
+
+const topCountries = Object.entries(countryCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5);
+---
+<Layout title={t('admin.dashboard.title')}>
+  <div class="flex h-screen bg-[#050505] overflow-hidden text-white font-sans relative">
+    
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#0a0a0a] border-r border-white/5 transform -translate-x-full transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0">
+      <div class="h-20 flex items-center px-8 border-b border-white/5">
+        <h1 class="text-xl font-black italic tracking-tighter uppercase">FTC <span class="text-blue-500">PRO</span></h1>
+      </div>
+      <nav class="p-4 space-y-1">
+        <button data-tab-target="stats" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          {t('admin.nav.stats')}
+        </button>
+        <button data-tab-target="users" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          {t('admin.nav.users')}
+        </button>
+        <button data-tab-target="categories" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          {t('admin.nav.categories')}
+        </button>
+        <button data-tab-target="courses" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          {t('admin.nav.courses')}
+        </button>
+        <button data-tab-target="logs" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          {t('admin.nav.logs')}
+        </button>
+      </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <header class="h-20 bg-[#080808]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-40">
+        <button id="mobile-toggle" class="lg:hidden p-2 text-2xl text-white">☰</button>
+        <h2 id="current-tab-title" class="text-sm font-black uppercase tracking-widest text-white italic">Panel</h2>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-6 lg:p-10">
+        
+        <div id="tab-stats" class="tab-pane hidden space-y-8 animate-in fade-in duration-500">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-white/5 bg-gradient-to-br from-blue-500/5 to-transparent relative overflow-hidden group">
+                  <p class="text-gray-500 text-[9px] font-mono font-black uppercase tracking-[0.2em] italic mb-1">{t('admin.stats.totalCommunity')}</p>
+                  <div class="flex items-baseline gap-2">
+                      <h3 class="text-4xl font-black italic tracking-tighter text-white">{profiles?.length || 0}</h3>
+                  </div>
+              </div>
+
+              <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent relative group">
+                  <p class="text-orange-500/50 text-[9px] font-mono font-black uppercase tracking-[0.2em] italic mb-1">{t('admin.stats.fllDivision')}</p>
+                  <h3 class="text-4xl font-black italic tracking-tighter text-orange-500">{firstStats.FLL}</h3>
+              </div>
+
+              <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent relative group">
+                  <p class="text-red-500/50 text-[9px] font-mono font-black uppercase tracking-[0.2em] italic mb-1">{t('admin.stats.ftcDivision')}</p>
+                  <h3 class="text-4xl font-black italic tracking-tighter text-red-500">{firstStats.FTC}</h3>
+              </div>
+
+              <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-blue-500/10 relative group">
+                  <p class="text-blue-500/50 text-[9px] font-mono font-black uppercase tracking-[0.2em] italic mb-1">{t('admin.stats.frcDivision')}</p>
+                  <h3 class="text-4xl font-black italic tracking-tighter text-blue-500">{firstStats.FRC}</h3>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="lg:col-span-2 bg-[#0a0a0a] p-8 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden">
+                  <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+                  <h4 class="text-white font-black italic uppercase tracking-tighter mb-8">{t('admin.stats.growthTitle')}</h4>
+                  <div class="h-[350px] w-full">
+                      <canvas id="growthChart"></canvas>
+                  </div>
+              </div>
+
+              <div class="bg-[#0a0a0a] p-8 rounded-[3rem] border border-white/5 relative flex flex-col">
+                  <h4 class="text-white font-black italic uppercase tracking-tighter mb-6 text-center">{t('admin.stats.topCountries')}</h4>
+                  <div class="space-y-6 flex-1">
+                      {topCountries.map(([name, count]) => (
+                          <div class="flex items-center justify-between group">
+                              <span class="text-[10px] font-black uppercase tracking-widest text-gray-500 italic">{name}</span>
+                              <div class="flex items-center gap-3">
+                                  <div class="w-24 h-1 bg-white/5 rounded-full overflow-hidden">
+                                      <div class="bg-blue-600 h-full" style={`width: ${(count / (profiles?.length || 1) * 100)}%`}></div>
+                                  </div>
+                                  <span class="text-xs font-black text-white italic">{count}</span>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div id="tab-users" class="tab-pane hidden">
+            <UserManagement profiles={profiles} lang={lang} />
+        </div>
+
+        <div id="tab-categories" class="tab-pane hidden">
+            <CategoryManager categories={categories} lang={lang} />
+        </div>
+
+        <div id="tab-courses" class="tab-pane hidden">
+            <CourseManager 
+                categories={categories} 
+                courses={courses} 
+                selectedCourseId={selectedCourseId} 
+                adminPath={adminPath} 
+                courseToEdit={courseToEdit}
+                lang={lang} 
+            />
+            {selectedCourseId && (
+                <div class="mt-12">
+                    <LessonManager 
+                        lessons={lessons}
+                        selectedCourseId={selectedCourseId}
+                        adminPath={adminPath}
+                        lessonToEdit={lessonToEdit}
+                        lang={lang}
+                    />
+                </div>
+            )}
+        </div>
+        <div id="tab-logs" class="tab-pane hidden">
+          <ViewLogs auditData={auditData || []} isAdmin={isAdmin} />
+        </div>
+      </main>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script is:inline>
+  const tabButtons = document.querySelectorAll('[data-tab-target]');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+  const titleDisplay = document.getElementById('current-tab-title');
+  const mobileToggle = document.getElementById('mobile-toggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.remove('-translate-x-full');
+    overlay.classList.remove('hidden');
+    setTimeout(() => overlay.classList.add('opacity-100'), 10);
+  }
+
+  function closeSidebar() {
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.remove('opacity-100');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  }
+
+  function showTab(tabId) {
+    tabPanes.forEach(p => p.classList.add('hidden'));
+    tabButtons.forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white', 'shadow-xl');
+        b.classList.add('text-gray-400', 'hover:bg-white/5');
+    });
+    
+    const activePane = document.getElementById(`tab-${tabId}`);
+    const activeBtn = document.querySelector(`[data-tab-target="${tabId}"]`);
+
+    if(activePane) activePane.classList.remove('hidden');
+    if(activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-xl');
+        activeBtn.classList.remove('text-gray-400', 'hover:bg-white/5');
+    }
+    
+    titleDisplay.innerText = tabId.replace('-', ' ').toUpperCase();
+    localStorage.setItem('admin_last_tab', tabId);
+    closeSidebar();
+  }
+
+  tabButtons.forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tabTarget)));
+  mobileToggle?.addEventListener('click', (e) => { e.stopPropagation(); openSidebar(); });
+  overlay?.addEventListener('click', closeSidebar);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || localStorage.getItem('admin_last_tab') || 'stats';
+  showTab(initialTab);
+</script>
+
+<script define:vars={{ userGrowthData, months }}>
+  const ctx = document.getElementById('growthChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: [{
+          data: userGrowthData,
+          borderColor: '#3b82f6',
+          borderWidth: 4,
+          tension: 0.4,
+          fill: true,
+          backgroundColor: 'rgba(59, 130, 246, 0.05)',
+          pointRadius: 6,
+          pointBackgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+</script>

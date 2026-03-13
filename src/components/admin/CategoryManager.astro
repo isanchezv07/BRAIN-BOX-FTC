@@ -1,0 +1,112 @@
+---
+// @Isanchezv
+// src/components/admin/CategoryManager.astro
+import { useTranslations } from "@/i18n/utils";
+
+const { categories, lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="space-y-8" 
+     x-data={`{ 
+        editMode: false, 
+        catId: '', 
+        catName: '', 
+        catDesc: '',
+        labels: {
+            edit: '${t('admin.categories.edit')}',
+            new: '${t('admin.categories.new')}',
+            save: '${t('admin.categories.saveBtn')}',
+            add: '${t('admin.categories.addBtn')}',
+            cancel: '${t('admin.categories.cancel')}'
+        }
+     }`}>
+  
+  <div class="flex items-center justify-between px-2">
+    <div>
+      <h3 class="text-xl font-black italic uppercase tracking-tighter text-white">
+        {t('admin.categories.title')}
+      </h3>
+      <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+        {t('admin.categories.subtitle')}
+      </p>
+    </div>
+    <span class="bg-purple-500/10 text-purple-500 text-[10px] font-bold px-4 py-2 rounded-xl border border-purple-500/20 uppercase tracking-widest">
+      {categories?.length || 0} {t('admin.categories.count')}
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="lg:col-span-4 sticky top-24">
+        <form method="POST" class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-purple-500/5 to-transparent shadow-2xl space-y-4">
+            <input type="hidden" name="_action" value="upsert-category" />
+            <input type="hidden" name="id" x-model="catId" />
+            
+            <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+                    <span class="text-[10px] font-black text-purple-500 uppercase italic tracking-widest" 
+                          x-text="editMode ? labels.edit : labels.new"></span>
+                </div>
+                <button type="button" x-show="editMode" @click="editMode = false; catId=''; catName=''; catDesc=''" class="text-[9px] text-white/40 hover:text-white uppercase font-black">
+                    ✕ <span x-text="labels.cancel"></span>
+                </button>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[9px] font-black uppercase text-gray-600 ml-2">{t('admin.categories.name')}</label>
+                <input name="name" x-model="catName" class="w-full p-4 rounded-2xl bg-black border border-white/5 text-white text-xs outline-none focus:border-purple-500/50" required />
+            </div>
+            
+            <div class="space-y-1">
+                <label class="text-[9px] font-black uppercase text-gray-600 ml-2">{t('admin.categories.description')}</label>
+                <textarea name="description" x-model="catDesc" rows="4" class="w-full p-4 rounded-2xl bg-black border border-white/5 text-white text-[11px] outline-none focus:border-purple-500/50 resize-none"></textarea>
+            </div>
+            
+            <button class="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase italic text-xs rounded-2xl transition-all shadow-xl shadow-purple-900/20">
+                <span x-text="editMode ? labels.save : labels.add"></span>
+            </button>
+        </form>
+    </div>
+
+    <div class="lg:col-span-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {categories?.map(cat => (
+                <div class="group relative bg-[#0a0a0a] border border-white/5 rounded-3xl p-5 hover:border-purple-500/40 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                            <span class="text-purple-500 text-lg">📂</span>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button 
+                                @click={`editMode = true; catId = '${cat.id}'; catName = '${cat.name}'; catDesc = '${cat.description || ''}'; window.scrollTo({top: 0, behavior: 'smooth'})`}
+                                class="p-2 rounded-lg bg-white/5 text-gray-500 hover:text-white"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+
+                            <form method="POST" onsubmit={`return confirm('${t('admin.categories.confirmDelete')}')`}>
+                                <input type="hidden" name="_action" value="delete-category" />
+                                <input type="hidden" name="id" value={cat.id} />
+                                <button class="p-2 rounded-lg bg-red-500/5 text-red-500/20 hover:text-red-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <h4 class="text-sm font-black text-white italic uppercase tracking-tighter group-hover:text-purple-400">
+                            {cat.name}
+                        </h4>
+                        <p class="text-[10px] text-gray-500 font-medium line-clamp-2">
+                            {cat.description || t('admin.categories.empty')}
+                        </p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+  </div>
+</div>

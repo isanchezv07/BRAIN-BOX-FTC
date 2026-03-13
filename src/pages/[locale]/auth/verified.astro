@@ -1,0 +1,40 @@
+---
+// @Isanchezv
+// src/pages/[locale]/auth/verified.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Layout title={t('auth.verified.title') + " " + t('auth.verified.highlight')}>
+  <main class="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden">
+    
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/10 blur-[120px] rounded-full"></div>
+
+    <div class="max-w-md w-full text-center relative z-10">
+      <div class="mb-8 inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 animate-bounce">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h1 class="text-5xl font-black text-white uppercase italic mb-4 tracking-tighter">
+        {t('auth.verified.title')} <span class="text-green-500">{t('auth.verified.highlight')}</span>
+      </h1>
+
+      <p class="text-gray-400 font-medium leading-relaxed mb-10 text-pretty">
+        {t('auth.verified.description')}
+      </p>
+
+      <a 
+        href={`/${lang}/signin`} 
+        class="group inline-block w-full bg-white text-black px-8 py-5 rounded-2xl font-black uppercase italic text-sm hover:bg-green-500 transition-all shadow-2xl shadow-white/5 active:scale-95"
+      >
+        {t('auth.verified.button')}
+        <span class="ml-2 group-hover:translate-x-1 inline-block transition-transform">→</span>
+      </a>
+    </div>
+  </main>
+</Layout>

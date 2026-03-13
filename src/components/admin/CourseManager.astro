@@ -1,0 +1,284 @@
+---
+// @Isanchezv
+// src/components/admin/CourseManager.astro
+import { useTranslations } from "@/i18n/utils";
+
+const { categories, courses, selectedCourseId, adminPath, courseToEdit, lang } = Astro.props;
+const t = useTranslations(lang);
+---
+<section class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+  
+  <div class="xl:col-span-2">
+    <div class="sticky top-24 bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative group">
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full group-hover:bg-blue-600/20 transition-all duration-700"></div>
+      
+      <div class="relative z-10">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <span class="text-xl">{courseToEdit ? '📝' : '✨'}</span>
+          </div>
+          <div>
+            <h2 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] italic leading-none">
+              {courseToEdit ? t('admin.courses.edit') : t('admin.courses.new')}
+            </h2>
+            <p class="text-white font-black text-lg uppercase italic tracking-tighter mt-1">{t('admin.courses.config')}</p>
+          </div>
+        </div>
+        
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="_action" value={courseToEdit ? "update-course" : "create-course"} />
+          {courseToEdit && <input type="hidden" name="id" value={courseToEdit.id} />}
+          
+          <div class="space-y-1.5">
+            <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.title')}</label>
+            <input 
+              name="title" 
+              placeholder={t('admin.courses.placeholder')} 
+              value={courseToEdit?.title || ""} 
+              class="w-full p-4 rounded-2xl bg-black/50 border border-white/10 text-white outline-none focus:border-blue-500 focus:ring-4 ring-blue-500/10 transition-all text-sm font-medium" 
+              required 
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.description')}</label>
+            <textarea 
+              name="description" 
+              rows="3"
+              placeholder={t('admin.courses.form.descPlaceholder')} 
+              class="w-full p-4 rounded-2xl bg-black/50 border border-white/10 text-white outline-none focus:border-blue-500 focus:ring-4 ring-blue-500/10 transition-all text-sm font-medium resize-none custom-scroll"
+            >{courseToEdit?.description || ""}</textarea>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.category')}</label>
+              <select name="category_id" class="w-full p-4 rounded-2xl bg-black/50 border border-white/10 text-gray-300 text-[10px] font-bold uppercase outline-none focus:border-blue-500 appearance-none cursor-pointer" required>
+                <option value="">{t('admin.courses.categoryDefault')}</option>
+                {categories?.map(c => <option value={c.id} selected={courseToEdit?.category_id === c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.level')}</label>
+              <select name="level" class="w-full p-4 rounded-2xl bg-black/50 border border-white/10 text-gray-300 text-[10px] font-bold uppercase outline-none focus:border-blue-500 appearance-none cursor-pointer">
+                <option value="Beginner" selected={courseToEdit?.level === "Beginner"}>{t('admin.courses.levels.beginner')}</option>
+                <option value="Intermediate" selected={courseToEdit?.level === "Intermediate"}>{t('admin.courses.levels.intermediate')}</option>
+                <option value="Advanced" selected={courseToEdit?.level === "Advanced"}>{t('admin.courses.levels.advanced')}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.requiredRole')}</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
+                  value="student" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('student');
+                    } catch {
+                      return roles === 'student';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.student')}
+              </label>
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
+                  value="mod" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('mod');
+                    } catch {
+                      return roles === 'mod';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.mod')}
+              </label>
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
+                  value="teacher" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('teacher');
+                    } catch {
+                      return roles === 'teacher';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.teacher')}
+              </label>
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
+                  value="admin" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('admin');
+                    } catch {
+                      return roles === 'admin';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.admin')}
+              </label>
+            </div>
+            <p class="text-[8px] text-gray-500 italic mt-2">{t('admin.courses.form.rolesHint')}</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-center justify-between group/cert">
+            <div>
+              <p class="text-[9px] font-black uppercase text-blue-500 tracking-widest italic leading-none mb-1">{t('admin.courses.form.certTitle')}</p>
+              <p class="text-[8px] text-gray-500 uppercase font-bold tracking-tighter">{t('admin.courses.form.certDesc')}</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="has_certificate" class="sr-only peer" checked={courseToEdit?.has_certificate}>
+              <div class="w-11 h-6 bg-black border border-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-gray-700 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white"></div>
+            </label>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[9px] font-black uppercase text-gray-500 ml-2 tracking-widest">{t('admin.courses.form.team')}</label>
+            <div class="relative">
+              <input 
+                name="team" 
+                placeholder={t('admin.courses.form.teamPlaceholder')} 
+                value={courseToEdit?.team || ""} 
+                class="w-full p-4 pl-11 rounded-2xl bg-black/50 border border-white/10 text-white outline-none focus:border-blue-500 focus:ring-4 ring-blue-500/10 transition-all text-sm font-medium italic" 
+              />
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">👥</span>
+            </div>
+          </div>
+          
+          <button class="w-full py-5 bg-blue-600 text-white font-black uppercase italic rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 text-xs tracking-widest group flex items-center justify-center gap-2">
+            {courseToEdit ? t('admin.courses.actions.save') : t('admin.courses.actions.create')}
+            <span class="group-hover:translate-x-1 transition-transform">🚀</span>
+          </button>
+
+          {courseToEdit && (
+            <a href={adminPath} class="block text-center text-[9px] font-black uppercase text-gray-500 hover:text-white transition-colors mt-2 tracking-widest">
+              ❌ {t('admin.courses.actions.cancel')}
+            </a>
+          )}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="xl:col-span-3 space-y-4 max-h-[700px] overflow-y-auto custom-scroll pr-4">
+    {courses?.length === 0 && (
+      <div class="p-20 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
+        <p class="text-gray-600 font-black uppercase italic tracking-widest">{t('admin.courses.status.empty')}</p>
+      </div>
+    )}
+
+    {courses?.map(course => {
+      const categoryName = categories?.find(c => c.id === course.category_id)?.name || "Uncategorized";
+      const isSelected = selectedCourseId === course.id;
+      
+      return (
+        <div class={`relative group p-6 rounded-[2.5rem] border transition-all duration-500 ${isSelected ? 'bg-gradient-to-r from-blue-600/10 to-transparent border-blue-500/40 shadow-2xl shadow-blue-900/20' : 'bg-[#0a0a0a] border-white/5 hover:border-white/20 shadow-xl'}`}>
+          
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-3">
+                <span class={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${course.is_published ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                   • {course.is_published ? t('admin.courses.status.published') : t('admin.courses.status.draft')}
+                </span>
+                
+                {course.has_certificate && (
+                  <span class="text-[8px] font-black uppercase px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-400">
+                    🏆 {t('admin.courses.badge.cert')}
+                  </span>
+                )}
+                
+                {course.team && (
+                  <span class="text-[8px] font-black uppercase px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 italic">
+                    👥 {course.team}
+                  </span>
+                )}
+                {course.required_role && (
+                  <span class="text-[8px] font-black uppercase px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 italic">
+                    🔒 {Array.isArray(course.required_role) ? course.required_role.join(', ') : course.required_role}
+                  </span>
+                )}
+              </div>
+              
+              <h3 class="text-white font-black italic text-lg uppercase truncate tracking-tighter group-hover:text-blue-400 transition-colors">
+                {course.title}
+              </h3>
+
+              <div class="flex flex-wrap gap-2 mt-3">
+                <div class="flex items-center gap-1.5 bg-white/5 border border-white/5 px-3 py-1 rounded-xl">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{categoryName}</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-white/5 border border-white/5 px-3 py-1 rounded-xl">
+                  <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                    {course.level === "Beginner" ? t('admin.courses.levels.beginner') : 
+                     course.level === "Intermediate" ? t('admin.courses.levels.intermediate') : 
+                     t('admin.courses.levels.advanced')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="flex bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                <a href={`${adminPath}?course=${course.id}`} class={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all ${isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-500 hover:text-white'}`}>
+                  {t('admin.courses.actions.manage')}
+                </a>
+                <a href={`${adminPath}?course=${course.id}&editCourse=${course.id}`} class="p-2.5 text-gray-500 hover:text-blue-400 transition-colors" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </a>
+              </div>
+
+              <form method="POST">
+                <input type="hidden" name="id" value={course.id} />
+                <input type="hidden" name="_action" value={course.is_published ? 'unpublish-course' : 'publish-course'} />
+                <button class={`p-3 rounded-2xl border transition-all ${course.is_published ? 'border-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white' : 'border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`} title={course.is_published ? 'Desactivar' : 'Activar'}>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                </button>
+              </form>
+
+              <form method="POST" onsubmit={`return confirm(\`${t('admin.courses.actions.confirmDelete')}\`)`}>
+                <input type="hidden" name="_action" value="delete-course" />
+                <input type="hidden" name="id" value={course.id} />
+                <button class="p-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-lg hover:shadow-red-500/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" /></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>

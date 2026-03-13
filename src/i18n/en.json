@@ -1,0 +1,1172 @@
+{
+  "site": {
+        "description": "Imporve your FTC skills and perfect your portafolio with BrainBox by CAN Queens"
+  },
+  "nav": {
+        "login": "Login",
+        "register": "Register",
+        "logout": "Sign Out",
+        "dashboard": "Dashboard",
+        "config": "Settings",
+        "close": "Close Menu"
+  },
+  "auth": {
+        "back_to_login": "Back",
+        "verify": {
+            "title": "Almost",
+            "titleHighlight": "ready!",
+            "description": "We have sent a confirmation link to your email.",
+            "instruction": "Check your inbox to activate your account and unlock access.",
+            "button": "Go to Login",
+             "resend": "Didn't receive anything? Resend"
+        },
+        "signout": {
+            "title": "Signing out",
+            "loading": "Leaving the system...",
+            "button": "Confirm Sign Out"
+        },
+        "signin": {
+            "title": "Access",
+            "titleHighlight": "Control",
+            "subtitle": "Enter your agent credentials",
+            "button": "Sign In",
+            "labels": {
+                "email": "Email Address",
+                "password": "Password",
+                "forgot": "Forgot password?",
+                "otp": "MODERATOR OTP CODE",
+                "otpNote": "Ask a moderator for this code if you cannot access"
+            },
+            "placeholders": {
+                "email": "agent@ftcacademy.com"
+            }
+        },
+        "register": {
+            "title": "Create Account",
+            "button": "Sign Up",
+            "hasAccount": "Already have an account?",
+            "loginLink": "Sign In",
+            "placeholders": {
+                "username": "Full Name (Certificates)",
+                "fullName": "Username",
+                "email": "Email Address",
+                "password": "Password",
+                "confirmPassword": "Confirm Password"
+            },
+            "helpers": {
+                "certNote": "* This name will be used for certificates. Full name recommended.",
+                "passwordLength": "Minimum 6 characters",
+                "passwordMismatch": "Passwords do not match"
+            }
+        }
+  },
+  "index": {
+        "title": "BRAIN BOX FTC",
+        "subtitle": "High-performance engineering platform for hardware, software, and competitive strategy development in First Tech Challenge.",
+        "explore": {
+            "title": "EXPLORE CORE"
+        },
+        "workflow": {
+            "label": "THE WORKFLOW // THE PROCESS",
+            "title": "Your path to FTC mastery",
+            "step1": {
+                "action": "Injection",
+                "title": "Learn",
+                "desc": "Access high-density technical modules. From Java and OnBot programming to advanced CAD mechanical design. No fluff, just pure engineering."
+            },
+            "step2": {
+                "action": "Deployment",
+                "title": "Execute",
+                "desc": "Test your logic with real competition challenges. Pass technical Quizzes and code missions that validate your field problem-solving skills."
+            },
+            "step3": {
+                "action": "Accreditation",
+                "title": "Certify",
+                "desc": "Gain Technical Grade recognition. Unlock digital certificates that validate your specialist rank and prove you have what it takes to lead the system."
+            }
+        },
+        "footer": {
+            "ready": "Ready to Start?"
+        },
+        "course": {
+            "status": "Status: Available",
+            "lessons": "Lessons",
+            "lesson": "Lesson",
+            "access": "Access System"
+        }
+  },
+  "explore": {
+        "title": "Explore",
+        "titleHighlight": "Lessons",
+        "subtitle": "Master new skills with our library of practical, straight-to-the-point courses.",
+        "searchPlaceholder": "What do you want to learn today?...",
+        "filterAll": "All",
+        "status": {
+            "completed": "Completed",
+            "review": "Review",
+            "start": "Start"
+        },
+        "empty": "No results found for your search"
+  },
+  "dashboard": {
+        "welcome": "Hi,",
+        "defaultUser": "Student",
+        "roles": {
+            "admin": "Admin Mode",
+            "student": "Student Panel"
+        },
+        "courses": {
+            "title": "My Courses",
+            "completed": "Completed",
+            "noCategory": "No Category",
+            "actions": {
+                "certificate": "View certificate ",
+                "access": "Access now ",
+                "completed": "Completed course"
+            },
+            "empty": "No courses published yet."
+        }
+  },
+  "course": {
+        "step": "Step",
+        "nav": {
+            "back": "Back to library",
+            "progress": "Your Progress"
+        },
+        "certificate": {
+            "download": "Download Certificate",
+            "unlocked": "Achievement Unlocked"
+        },
+        "lessons": {
+            "start": "Start",
+            "review": "Review",
+            "locked": "Locked"
+        },
+        "status": {
+            "completed": "Completed"
+        }
+  },
+  "lesson": {
+        "nav": {
+            "back": "← BACK TO COURSE"
+        },
+        "status": {
+            "completed": "Lesson completed ✓",
+            "processing": "PROCESSING...",
+            "counter": "lesson {current} of {total}"
+        },
+        "actions": {
+            "continue": "Continue course",
+            "viewCertificate": "View Certificate",
+            "completeAndFollow": "Mark and follow →",
+            "finishCourse": "Finish course 🏆"
+        },
+        "buttons": {
+            "back":"BACK TO COURSE",
+            "certificate": "CLAIM DIPLOMA",
+            "next_lesson": "NEXT LESSON",
+            "finish": "FINISH LESSON"
+        }
+  },
+  "userMenu": {
+        "defaultName": "User",
+        "student": "Student",
+        "admin": "⚡ Admin",
+        "stats": {
+            "courses": "Courses",
+            "completed": "Completed"
+        },
+        "links": {
+            "language": "Language",
+            "settings": "Settings",
+            "lessons": "Explore Lessons",
+            "dashboard": "My Dashboard",
+            "adminPanel": "Admin Panel",
+            "signout": "Sign Out",
+            "educationalPanel": "Portfolio AI",
+            "securityReports": "Security Reports",
+            "playground": "Simulator"
+        }
+  },
+  "admin": {
+        "title": "FTC STUDIO",
+        "version": "Command Center v2",
+        "status": "System Status",
+        "sidebarHint": "Use the right panel to structure your courses. Select a project to unlock the lesson editor.",
+        "waiting": {
+            "title": "Waiting for Selection",
+            "subtitle": "Select a course to modify content"
+        },
+        "alerts": {
+            "updated": "Profile updated",
+            "deleted": "Item deleted"
+        },
+        "users": {
+            "title": "Profile Management",
+            "subtitle": "Directory of registered users (Click a row to see details)",
+            "count": "registered",
+            "table": {
+                "name": "Name / Username",
+                "status": "Status",
+                "role": "Role",
+                "country": "Country / FIRST",
+                "action": "Quick Action"
+            },
+            "roles": {
+                "student": "Student",
+                "admin": "Admin",
+                "mod": "Moderator",
+                "teacher": "Teacher"
+            },
+            "modal": {
+                "bio": "User_Bio",
+                "noBio": "No biography provided.",
+                "programs": "First_Programs",
+                "email": "Auth_Email",
+                "security": "Security_Protocols",
+                "statusLevel": "Status_Level",
+                "banDuration": "Ban_Duration (Minutes)",
+                "banHint": "Enter the number of minutes the restriction will last.",
+                "execute": "Execute_Changes",
+                "joinDate": "JOIN_DATE"
+            }
+        },
+        "lessons": {
+            "title": {
+                "placeholder": "Lesson title"
+            },
+            "freeLabel": "Free Lesson",
+            "tab": {
+                "edit": "Edit",
+                "preview": "Preview"
+            },
+            "editor": {
+                "placeholder": "Write your Markdown content here..."
+            },
+            "quiz": {
+                "title": "JSON Quiz",
+                "none": "-- No Quiz --",
+                "limitLabel": "Max Questions",
+                "limitPlaceholder": "e.g., 10",
+                "limitHint": "Empty to show all",
+                "timerLabel": "Timer",
+                "timerOn": "ENABLED",
+                "timerOff": "DISABLED"
+            },
+            "buttons": {
+                "save": "Save Lesson"
+            },
+            "step": "Step",
+            "confirmDelete": "Are you sure you want to delete this lesson?"
+        },
+        "courses": {
+            "new": "Create new course",
+            "edit": "Editing course",
+            "config": "Course Configuration",
+            "form": {
+                "title": "Program title",
+                "description": "Course description",
+                "descPlaceholder": "What is this course about?",
+                "category": "Category",
+                "level": "Difficulty",
+                "requiredRole": "Required Role",
+                "rolesHint": "Select all roles that can access this course. Leave empty for all users.",
+                "certTitle": "Official Certification",
+                "certDesc": "Awards certificate upon completion?",
+                "team": "Assign to Team (Optional)",
+                "teamPlaceholder": "e.g., Sales, Marketing, IT..."
+            },
+            "placeholder": "e.g., Intro to Robotics",
+            "categoryDefault": "Select a category",
+            "actions": {
+                "save": "Save Changes",
+                "create": "Launch Course",
+                "cancel": "Cancel Edition",
+                "manage": "Manage",
+                "confirmDelete": "Are you sure you want to completely delete this course?"
+            },
+            "status": {
+                "empty": "No courses registered",
+                "published": "Published",
+                "draft": "Draft"
+            },
+            "badge": {
+                "cert": "Certificate"
+            },
+            "levels": {
+                "beginner": "Beginner",
+                "intermediate": "Intermediate",
+                "advanced": "Advanced"
+            }
+        },
+        "categories": {
+            "title": "Category Management",
+            "subtitle": "Organize your course structure",
+            "count": "Categories",
+            "confirmDelete": "Delete category?",
+            "new": "New Category",
+            "edit": "Edit Category",
+            "addBtn": "Create Category",
+            "saveBtn": "Save Changes",
+            "cancel": "Cancel",
+            "name": "Name",
+            "description": "Description",
+            "empty": "No description available."
+        },
+        "stats": {
+            "users": "Total Users",
+            "courses": "Active Courses",
+            "lessons": "Lessons Completed",
+            "live": "LIVE DATA",
+            "chartLabel": "New Users",
+            "totalCommunity": "Total Community",
+            "fllDivision": "FLL Division",
+            "ftcDivision": "FTC Division",
+            "frcDivision": "FRC Division",
+            "growthTitle": "Growth Curve",
+            "topCountries": "Top Locations"
+        },
+        "logs": {
+            "title": "Console_Activity_Log",
+            "purge": "[ Purge_Database ]",
+            "target": "Target:",
+            "executedBy": "Executed_By:",
+            "noLogs": "No_Logs_Found",
+            "system": "system"
+        },
+        "dashboard": {
+            "title": "Admin Dashboard"
+        },
+        "nav": {
+            "stats": "Dashboard",
+            "users": "Users",
+            "categories": "Categories",
+            "courses": "Courses",
+            "logs": "System Logs"
+        },
+        "months": {
+            "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        }
+  },
+  "congrats": {
+        "tagline": "YOU {action} IT!",
+        "actionWord": "DID",
+        "awardedTo": "Certificate awarded to",
+        "defaultUser": "User",
+        "buttons": {
+            "dashboard": "Go to Dashboard",
+            "celebrate": "Celebrate again"
+        }
+  },
+  "cert": {
+        "downloadBtn": "Download Official Certificate",
+        "header": "CERTIFICATE OF EXCELLENCE",
+        "mainTitle": "RECOGNITION",
+        "awardedBy": "BRAIN BOX FTC AWARDS TO:",
+        "completionText": "For successfully completing all units of the program",
+        "dateText": "Issued on {date}",
+        "coachTitle": "Head Coach",
+        "sealTitle": "VERIFIED",
+        "institutionalSeal": "Institutional Seal"
+  },
+  "errors": {
+        "404": {
+            "title": "404 Error",
+            "description": "Trajectory not found on server",
+            "button": "Return to Base",
+            "links": {
+                "dashboard": "Dashboard",
+                "courses": "Academy"
+            },
+            "system_status": "System_Status: Operational",
+            "waiting": "Waiting for input..."
+        }
+  },
+  "buttons": {
+        "markComplete": "Mark as completed 🎉",
+        "back": " BACK"
+  },
+  "footer": {
+        "brandDescription": "High-performance learning systems for competitive robotics.",
+        "academy": {
+            "title": "Academy",
+            "courses": "Explore Courses",
+            "community": "Community",
+            "resources": "Resources",
+            "docs": "Documentation",
+            "privacy": "Privacy",
+            "terms": "Terms"
+        },
+        "support": {
+            "title": "Support",
+            "docs": "Documentation",
+            "privacy": "Privacy",
+            "terms": "Terms"
+        },
+        "system": {
+            "status": "System: Online",
+            "ping": "Ping"
+        },
+        "copyright": "All rights reserved",
+        "build": "Build"
+  },
+  "quiz": {
+        "results": {
+            "timeout": "TIME EXPIRED!",
+            "passed": "FINAL SCORE",
+            "completed": "LESSON COMPLETED",
+            "failed": "NOT QUITE THERE"
+        },
+        "description": {
+            "timeout": "You need to be faster next time",
+            "passed": "Challenge successfully passed!",
+            "completed": "Content unlocked successfully!",
+            "failed": "You need at least 70% to advance"
+        },
+        "buttons": {
+            "retry": "Retry Challenge",
+            "practice": "Practice Again"
+        },
+        "status": {
+            "question": "QUESTION"
+        }
+  },
+  "security": {
+        "title": "Protected Session",
+        "description": "To ensure the integrity of the evaluation, the content has been temporarily paused.",
+        "instruction": "Please keep the focus on this window and avoid using secondary browser functions.",
+        "button": "Continue Evaluation"
+  },
+  "results": {
+        "page_title": "Course Results",
+        "congrats": "CONGRATULATIONS!",
+        "try_again": "KEEP TRYING",
+        "finished_course": "YOU HAVE FINISHED THE COURSE",
+        "final_average": "FINAL AVERAGE",
+        "accreditation_status": "ACCREDITATION STATUS",
+        "status_approved": "COURSE PASSED",
+        "status_failed": "COURSE FAILED",
+        "completion_by_reading": "Completed by lesson fulfillment",
+        "btn_certificate": "GET CERTIFICATE",
+        "btn_back": "BACK TO DASHBOARD",
+        "retry_hint": "You haven't reached the minimum score (70%). We recommend reviewing the topics and retrying the exams.",
+        "btn_review": "REVIEW LESSONS",
+        "course_completed": "Course completed",
+        "no_certificate_badge": "No certificate badge"
+  },
+  "profile": {
+        "title": "Agent Profile",
+        "button": { 
+            "back": "Back to Dashboard" 
+        },
+        "label": {
+          "username": "Username",
+          "team": "Team Number",
+          "country": "Country / Location",
+          "categories": "FIRST Categories",
+          "bio": "Agent Biography",
+          "languages": "Communication Languages",
+          "fullname": "Full Name",
+          "fullname_desc": "The name can only be defined during account registration."
+        },
+        "placeholders": {
+          "bio": "Tell us about your robotics journey...",
+          "country": "Type to search for a country..."
+        },
+        "stats": {
+          "available": "Available Courses",
+          "completed": "Completed Missions"
+        },
+        "saveButton": "Update Credentials"
+  },
+  "wip": {
+        "marquee": {
+            "top": "⚠ UNDER CONSTRUCTION ⚠ WORK IN PROGRESS ⚠ MAINTENANCE_MODE ⚠",
+            "bottom": "⚠ CAUTION ⚠ HARD HAT AREA ⚠ DO NOT ENTER ⚠ DEV_ONLY ⚠"
+        },
+        "title": "SYSTEM_UPDATE",
+        "status": "> Restricted Access",
+        "backHome": "BACK TO HOME",
+        "loading": "Loading_Assets..."
+  },
+  "ops": {
+        "title": "System",
+        "highlight": "Ops",
+        "search_placeholder": "SEARCH USER BY ID, @NAME OR EMAIL...",
+        "empty_state": {
+            "title": "Awaiting Selection",
+            "desc": "Use the search bar above to identify a user and deploy the command console."
+        },
+        "otp": {
+            "title": "Secure_Token",
+            "subtitle": "Single use • Expires in 15 min",
+            "copy": "Click to copy",
+            "close": "Close Terminal"   
+        },
+        "commands":{
+            "otp": {
+                "name": "Generate OTP",
+                "desc": "Generates temporary access and invalidates previous sessions."
+            },
+            "purge": {
+                "name": "Purge Sessions",
+                "desc": "Disconnects the user from all active devices."
+            },
+            "fix": {
+                "name": "Fix Progress",
+                "desc": "Recalculates lesson and quiz progress."
+            },
+            "scan": {
+                "name": "Scan IPs",
+                "desc": "Analyzes account duplicity by IP address."
+            }
+        },
+        "alerts": {
+            "confirm": "Execute critical command: ",
+            "success": "Command executed successfully",
+            "copied": "Copied to clipboard"
+        }
+  },
+  "scanner": {
+        "title": "Portfolio",
+        "highlight": "Scanner",
+        "subtitle": "Engineering analysis with",
+        "world_class": "World Championship",
+        "dropzone": {
+            "idle": "DRAG YOUR PORTFOLIO OR CLICK",
+            "format": "Format: PDF (Recommended < 5MB)"
+        },
+        "score": {
+            "title": "Engineering Score"
+        },
+        "loading": "Processing neural networks...",
+        "compliance": {
+            "title": "Portfolio Compliance",
+            "pages": "Page Limit",
+            "coverage": "Coverage",
+            "evidence": "Evidence Quality"
+        },
+        "analysis": {
+            "title": "Technical Analysis"
+        },
+        "inspire": {
+            "title": "Award Gap"
+        },
+        "list": {
+            "critical": "Criticals / Violations",
+            "strengths": "Strengths",
+            "actions": "Next Steps"
+        },
+        "interview": {
+            "title": "Interview Simulator",
+            "evaluates": "What is the judge testing?",
+            "strategy": "Strategy",
+            "risk": "Risk",
+            "empty": "No questions were generated for this portfolio."
+        },
+        "btn": {
+            "retry": "Scan another portfolio"
+        }
+  },
+  "verify": {
+        "title": "Verification",
+        "valid": "Valid Certificate ✅",
+        "invalid": "Not Found ❌",
+        "registry": "Official BRAIN BOX FTC Registry",
+        "student": "Student",
+        "course": "Course",
+        "date": "Issue Date",
+        "error_desc": "This document does not exist in our official records.",
+        "back_home": "Back to home"
+  },
+  "banned": {
+        "title": "TERMINATED",
+        "access_revoked": "Access_Revoked",
+        "report": "Status_Report",
+        "perm": "Permanent Ban",
+        "temp": "Temporary Suspension",
+        "remaining": "Time_Remaining:",
+        "timer": {
+            "days": "Days",
+            "hours": "Hrs",
+            "mins": "Min",
+            "secs": "Sec"
+        },
+        "reestablish": "[ RE-ESTABLISH_CONNECTION ]"
+  },
+  "forgot": {
+        "title": "Recover",
+        "highlight": "Access",
+        "subtitle": "We will send you a restoration link",
+        "label": "Email",
+        "placeholder": "your@email.com",
+        "button": "Send Link",
+        "sending": "Sending...",
+        "success": "Link sent! Check your email",
+        "error": "Error sending the link",
+        "error_unexpected": "An unexpected error occurred"
+  },
+  "emergency": {
+        "title": "Emergency",
+        "highlight": "Access",
+        "bypass": "Bypass Access",
+        "sync": "Synchronizing secure session...",
+        "placeholders": {
+        "user": "USERNAME",
+        "otp": "OTP CODE"
+        },
+        "btn": {
+        "default": "EXECUTE ACCESS",
+        "loading": "BYPASSING..."
+        },
+        "errors": {
+        "invalid": "Invalid or expired code"
+        }
+  },
+  "update_pass": {
+        "title": "New",
+        "highlight": "Key",
+        "subtitle": "Confirm your new access password",
+        "label": "New Password",
+        "confirm_label": "Confirm Password",
+        "button": "Update Password",
+        "updating": "Updating...",
+        "mismatch": "Passwords do not match",
+        "success": "Password updated! Redirecting...",
+        "error_unexpected": "Error updating password"
+  },
+  "privacy": {
+          "documento": {
+            "titulo": "PRIVACY POLICY",
+            "entidad": "BRAIN BOX FTC",
+            "ultima_actualizacion": "February 22, 2026",
+            "hero": {
+              "titulo": "Privacy",
+              "subtitulo": "Comprehensive commitment to data protection, child safety, and intellectual property."
+            },
+            "preambulo": [
+              {
+                "id": 1,
+                "texto": "At Brain Box FTC, the privacy and security of our users, especially minors participating in the FIRST Tech Challenge, is our top priority."
+              },
+              {
+                "id": 2,
+                "texto": "This policy details how we collect, use, protect, and manage your personal information when you use our educational platform and Artificial Intelligence tools."
+              }
+            ]
+          },
+          "secciones": [
+            {
+              "id": "1",
+              "titulo": "DATA CONTROLLER",
+              "contenido": [
+                "BRAIN BOX FTC is an open-source educational platform dedicated to technical training in robotics.",
+                "We operate under strict principles of transparency, data minimization, and digital security, ensuring that control of information always remains in the hands of the User."
+              ]
+            },
+            {
+              "id": "2",
+              "titulo": "YOUTH PROTECTION PROGRAM (YPP) AND CHILD SAFETY",
+              "contenido": [
+                "Following the rigorous safety guidelines of FIRST®, we have implemented strict protocols to ensure a safe digital environment:"
+              ],
+              "lista_detallada": [
+                {
+                  "id": 1,
+                  "titulo": "Supervised Interaction",
+                  "texto": "We do not allow unmoderated private communication or direct messaging between mentors and students within the platform."
+                },
+                {
+                  "id": 2,
+                  "titulo": "Consent",
+                  "texto": "Users under 13 years of age require direct supervision and consent from a legal guardian or authorized mentor ('teacher' role) to use the platform."
+                },
+                {
+                  "id": 3,
+                  "titulo": "Zero Tolerance",
+                  "texto": "Any inappropriate behavior, harassment, or violation of community guidelines will result in an immediate, irreversible ban and a report to the team leaders."
+                },
+                {
+                  "id": 4,
+                  "titulo": "Location Privacy",
+                  "texto": "We do not collect, store, or share precise geolocation data of users under any circumstances."
+                }
+              ]
+            },
+            {
+              "id": "3",
+              "titulo": "COLLECTED DATA AND ITS PURPOSE",
+              "contenido": [
+                "We only collect the information strictly necessary for the technical and educational operation of the Platform."
+              ],
+              "tabla_datos": [
+                {
+                  "id": 1,
+                  "categoria": "Account and Profile",
+                  "datos": "Email, Password Hash, Role (Student, Teacher, Admin), Team Number.",
+                  "finalidad": "Secure access management, authentication, and Role-Based Access Control (RBAC)."
+                },
+                {
+                  "id": 2,
+                  "categoria": "Academic Progress",
+                  "datos": "Quiz results, Completed courses, Issued certificates.",
+                  "finalidad": "Educational tracking, issuance of accreditations, and team statistics."
+                },
+                {
+                  "id": 3,
+                  "categoria": "Files and Simulation",
+                  "datos": "FTC Portfolios (PDF), Blockly/Java Scripts, Physics logs.",
+                  "finalidad": "Automated AI analysis, cloud saving, and technical debugging."
+                }
+              ]
+            },
+            {
+              "id": "4",
+              "titulo": "SUPABASE INFRASTRUCTURE AND SECURITY",
+              "contenido": [
+                "Our database services are centralized in Supabase (PostgreSQL), allowing us to guarantee enterprise-grade security standards:"
+              ],
+              "lista_detallada": [
+                {
+                  "id": 1,
+                  "titulo": "Row Level Security (RLS)",
+                  "texto": "We implement Row Level Security (RLS) policies to ensure that a team's scripts, portfolios, and data are completely invisible and inaccessible to other teams."
+                },
+                {
+                  "id": 2,
+                  "titulo": "Encryption in Transit and at Rest",
+                  "texto": "All information is encrypted using the AES-256 standard when stored (at rest) and via TLS protocols during transmission."
+                },
+                {
+                  "id": 3,
+                  "titulo": "Automatic Backups",
+                  "texto": "The system performs daily automatic backups to prevent any data loss due to technical failures."
+                }
+              ]
+            },
+            {
+              "id": "5",
+              "titulo": "ARCO RIGHTS AND GDPR",
+              "contenido": [
+                "We comply with international data protection regulations (GDPR). As a user, you have absolute control over your information and can exercise the following rights from your profile:"
+              ],
+              "lista_detallada": [
+                {
+                  "id": 1,
+                  "titulo": "Right to be Forgotten",
+                  "texto": "Request the complete and permanent deletion of your account, progress, and all your digital footprint from our servers with a single click."
+                },
+                {
+                  "id": 2,
+                  "titulo": "Data Portability",
+                  "texto": "Download a file containing all your information, certificates, and scripts in open and readable formats (JSON/PDF) at any time."
+                },
+                {
+                  "id": 3,
+                  "titulo": "Access and Rectification",
+                  "texto": "Independently modify, correct, or update your profile data and your FTC team association."
+                }
+              ]
+            }
+          ],
+          "contacto": {
+            "pregunta": "Questions about your team's security or data handling?",
+            "boton": "CONTACT DATA PROTECTION OFFICER",
+            "email": "privacy@brainboxftc.com"
+          }
+  },
+  "terms": {
+        "documento": {
+          "titulo": "TÉRMINOS Y CONDICIONES DE USO",
+          "entidad": "BRAIN BOX FTC",
+          "ultima_actualizacion": "22 de febrero de 2026",
+          "preambulo": [
+            {
+              "id": 1,
+              "texto": "Es responsabilidad exclusiva del Usuario leer, comprender y aceptar los presentes Términos y Condiciones antes de registrarse, acceder o utilizar cualquier servicio de Brain Box FTC."
+            },
+            {
+              "id": 2,
+              "texto": "El desconocimiento, omisión o interpretación incorrecta de estos Términos no exime al Usuario de su cumplimiento ni limita la aplicación de las disposiciones aquí contenidas."
+            },
+            {
+              "id": 3,
+              "texto": "Se recomienda al Usuario revisar periódicamente los Términos y Condiciones, ya que Brain Box FTC puede actualizarlos, modificarlos o complementarlos en cualquier momento."
+            }
+          ]
+        },
+        "secciones": [
+          {
+            "id": "1",
+            "titulo": "INTRODUCCIÓN",
+            "contenido": [
+              "Bienvenido a Brain Box FTC (en adelante, “Brain Box”, el “Sitio” o la “Plataforma”), accesible desde: https://brain-box-ftc.vercel.app",
+              "Brain Box FTC es una plataforma educativa digital orientada a equipos participantes en FIRST Tech Challenge (FTC), que ofrece:"
+            ],
+            "lista": [
+              { "id": 1, "texto": "Cursos educativos estructurados." },
+              { "id": 2, "texto": "Lecciones formativas." },
+              { "id": 3, "texto": "Evaluaciones y quizzes." },
+              { "id": 4, "texto": "Certificados personalizados." },
+              { "id": 5, "texto": "Análisis automatizado de portafolios mediante Inteligencia Artificial." },
+              { "id": 6, "texto": "Creación y publicación colaborativa de cursos por equipos." },
+              { "id": 7, "texto": "Gestión personalizada de perfiles de usuario." }
+            ],
+            "conclusion": [
+              "Al acceder o utilizar cualquier parte del Sitio, el Usuario declara haber leído, comprendido y aceptado los presentes Términos y Condiciones en su totalidad.",
+              "Si no está de acuerdo, deberá abstenerse de utilizar la Plataforma."
+            ]
+          },
+          {
+            "id": "2",
+            "titulo": "DEFINICIONES",
+            "definiciones": [
+              { "id": 1, "termino": "Usuario", "descripcion": "Persona que accede o utiliza la Plataforma." },
+              { "id": 2, "termino": "Equipo FTC", "descripcion": "Grupo de estudiantes registrado o participante en FIRST Tech Challenge, incluyendo a sus mentores o representantes autorizados." },
+              { "id": 3, "termino": "Curso", "descripcion": "Programa educativo digital estructurado en lecciones." },
+              { "id": 4, "termino": "Lección", "descripcion": "Unidad de contenido dentro de un curso." },
+              { "id": 5, "termino": "Quiz", "descripcion": "Evaluación asociada a una lección, que puede o no tener límite de tiempo." },
+              { "id": 6, "termino": "Certificado", "descripcion": "Documento digital personalizado emitido tras completar ciertos cursos." },
+              { "id": 7, "termino": "IA", "descripcion": "Sistema de Inteligencia Artificial utilizado para análisis automatizado." },
+              { "id": 8, "termino": "Contenido del Usuario", "descripcion": "Información, archivos o materiales subidos por el Usuario." }
+            ]
+          },
+          {
+            "id": "3",
+            "titulo": "DESCRIPCIÓN GENERAL DE LOS SERVICIOS",
+            "contenido": ["Brain Box FTC proporciona:"],
+            "subsecciones": [
+              {
+                "id": "3.1",
+                "titulo": "Plataforma de Cursos",
+                "contenido": ["Los cursos pueden:"],
+                "lista": [
+                  { "id": 1, "texto": "Estar divididos en múltiples lecciones." },
+                  { "id": 2, "texto": "Incluir material educativo escrito o multimedia." },
+                  { "id": 3, "texto": "Contener quizzes con o sin límite de tiempo." },
+                  { "id": 4, "texto": "Requerir completar evaluaciones para avanzar." },
+                  { "id": 5, "texto": "Otorgar certificados personalizados al finalizar." }
+                ],
+                "conclusion": ["La Plataforma se reserva el derecho de modificar contenidos, estructura o disponibilidad de cursos."]
+              },
+              {
+                "id": "3.2",
+                "titulo": "Quizzes y Evaluaciones",
+                "contenido": ["Los quizzes pueden:"],
+                "lista": [
+                  { "id": 1, "texto": "No tener límite de tiempo." },
+                  { "id": 2, "texto": "Tener límite de tiempo establecido por la Plataforma." },
+                  { "id": 3, "texto": "Requerir una puntuación mínima para aprobar." }
+                ],
+                "contenido_secundario": ["El Usuario acepta que:"],
+                "lista_secundaria": [
+                  { "id": 1, "texto": "Las calificaciones son automatizadas." },
+                  { "id": 2, "texto": "La Plataforma puede registrar intentos." },
+                  { "id": 3, "texto": "El mal uso o manipulación, intencional o no, del sistema podrá dar lugar a medidas correctivas, incluyendo la suspensión temporal o definitiva de la cuenta." }
+                ]
+              },
+              {
+                "id": "3.3",
+                "titulo": "Certificados Personalizados",
+                "contenido": [
+                  "Algunos cursos pueden otorgar certificados digitales personalizados.",
+                  "El Usuario reconoce y acepta que:"
+                ],
+                "lista": [
+                  { "id": 1, "texto": "Los certificados son de carácter exclusivamente educativo y acreditan únicamente la finalización satisfactoria de un curso dentro de la Plataforma." },
+                  { "id": 2, "texto": "No constituyen certificaciones oficiales de FIRST, ni sustituyen acreditaciones institucionales, académicas o profesionales." },
+                  { "id": 3, "texto": "El certificado puede contener información proporcionada previamente por el propio Usuario dentro de la Plataforma, como nombre, nombre de usuario, número de equipo u otros datos ingresados en su perfil." },
+                  { "id": 4, "texto": "Brain Box FTC no se hace responsable por errores derivados de información incorrecta, incompleta o desactualizada proporcionada por el Usuario." },
+                  { "id": 5, "texto": "Los certificados son de naturaleza digital y no tienen validez legal fuera del contexto educativo de la Plataforma, salvo que expresamente se indique lo contrario." },
+                  { "id": 6, "texto": "Los certificados cuentan con un sistema de verificación y protección contra falsificación, el cual consiste en un código QR único incorporado en el documento. Dicho código redirige a la Plataforma para comprobar su autenticidad." },
+                  { "id": 7, "texto": "La alteración, modificación, falsificación o uso indebido del certificado o de su código de verificación podrá implicar la revocación inmediata del mismo, así como la suspensión temporal o definitiva de la cuenta del Usuario." },
+                  { "id": 8, "texto": "Brain Box FTC se reserva el derecho de revocar certificados en caso de fraude, manipulación del sistema o incumplimiento de los presentes Términos y Condiciones." }
+                ]
+              },
+              {
+                "id": "3.4",
+                "titulo": "Cursos Creados por Equipos",
+                "contenido": ["Algunos equipos podrán:"],
+                "lista": [
+                  { "id": 1, "texto": "Crear cursos." },
+                  { "id": 2, "texto": "Compartirlos con administradores." },
+                  { "id": 3, "texto": "Solicitar su publicación en la Plataforma." }
+                ],
+                "contenido_secundario": ["Al enviar un curso, el equipo:"],
+                "lista_secundaria": [
+                  { "id": 1, "texto": "Declara tener los derechos necesarios sobre el contenido enviado y que este no infringe derechos de terceros." },
+                  { "id": 2, "texto": "Autoriza a Brain Box FTC a revisarlo, evaluarlo, editarlo y publicarlo dentro de la Plataforma." },
+                  { "id": 3, "texto": "Concede a Brain Box FTC una licencia no exclusiva, gratuita y limitada para su distribución, visualización y uso dentro de la Plataforma." },
+                  { "id": 4, "texto": "Acepta que la publicación del curso no genera relación laboral, societaria ni contractual adicional distinta a la establecida en estos Términos." },
+                  { "id": 5, "texto": "Se compromete a no cobrar, directa o indirectamente, por el acceso a la Plataforma ni por el acceso al curso publicado dentro de Brain Box FTC, salvo autorización expresa y por escrito del administrador de la Plataforma." }
+                ],
+                "contenido_terciario": ["Brain Box FTC podrá rechazar, editar, suspender o retirar contenido que:"],
+                "lista_terciaria": [
+                  { "id": 1, "texto": "Sea ofensivo, discriminatorio o inapropiado." },
+                  { "id": 2, "texto": "Infrinja derechos de autor o derechos de terceros." },
+                  { "id": 3, "texto": "No cumpla estándares educativos mínimos." },
+                  { "id": 4, "texto": "Intente redirigir a los Usuarios fuera de la Plataforma con fines comerciales no autorizados." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "4",
+            "titulo": "PERFIL DE USUARIO",
+            "contenido": ["El Usuario podrá modificar su perfil incluyendo:"],
+            "lista": [
+              { "id": 1, "texto": "Imagen." },
+              { "id": 2, "texto": "Nombre de usuario." },
+              { "id": 3, "texto": "Número de equipo." },
+              { "id": 4, "texto": "País." },
+              { "id": 5, "texto": "Categorías FIRST a las que pertenece." },
+              { "id": 6, "texto": "Biografía." },
+              { "id": 7, "texto": "Idiomas que habla." }
+            ],
+            "contenido_secundario": [
+              "El Usuario es responsable de la veracidad de la información proporcionada.",
+              "Brain Box FTC podrá eliminar información, contenido o incluso suspender o cancelar cuentas de Usuario que:"
+            ],
+            "lista_secundaria": [
+              { "id": 1, "texto": "Sea falsa." },
+              { "id": 2, "texto": "Sea ofensiva." },
+              { "id": 3, "texto": "Infrinja derechos de terceros." }
+            ]
+          },
+          {
+            "id": "5",
+            "titulo": "SISTEMA DE INTELIGENCIA ARTIFICIAL PARA PORTAFOLIOS FTC",
+            "subsecciones": [
+              {
+                "id": "5.1",
+                "titulo": "Naturaleza del Servicio",
+                "contenido": [
+                  "La Plataforma incluye una herramienta de Inteligencia Artificial (IA) destinada al análisis de portafolios FTC.",
+                  "El acceso a esta herramienta está limitado exclusivamente a las cuentas que cuenten con el rol de “teacher” dentro de la Plataforma.",
+                  "El rol de “teacher” no se asigna automáticamente y deberá solicitarse directamente al equipo propietario o administrador de Brain Box FTC, quien se reserva el derecho de aprobar o rechazar dicha solicitud bajo sus propios criterios.",
+                  "El análisis realizado por la herramienta:"
+                ],
+                "lista": [
+                  { "id": 1, "texto": "Es automatizado." },
+                  { "id": 2, "texto": "Tiene fines educativos y orientativos." },
+                  { "id": 3, "texto": "No sustituye la evaluación de jueces oficiales." }
+                ]
+              },
+              {
+                "id": "5.2",
+                "titulo": "Carácter Tentativo",
+                "contenido": ["El Usuario acepta expresamente que:"],
+                "lista": [
+                  { "id": 1, "texto": "El resultado generado por la IA es aproximado y basado en modelos automatizados." },
+                  { "id": 2, "texto": "No garantiza resultados en competencias regionales, estatales, nacionales, internacionales, ni en ningún otro tipo de evento, evaluación, proceso de selección, premiación, revisión técnica o cualquier instancia oficial o no oficial relacionada con FIRST Tech Challenge u otras actividades académicas o competitivas." },
+                  { "id": 3, "texto": "No representa una evaluación oficial de FIRST ni de sus jueces." }
+                ],
+                "conclusion": ["Brain Box FTC no será responsable por decisiones estratégicas ni por resultados competitivos derivados del uso de esta herramienta."]
+              },
+              {
+                "id": "5.3",
+                "titulo": "Almacenamiento y Uso para Mejora del Modelo",
+                "contenido": ["El Usuario que cuente con el rol de “teacher” y que suba un portafolio en representación de un equipo acepta expresamente que:"],
+                "lista": [
+                  { "id": 1, "texto": "Declara y garantiza que cuenta con la autorización expresa y válida del equipo correspondiente para cargar el portafolio en la Plataforma." },
+                  { "id": 2, "texto": "Asume plena responsabilidad por la legitimidad, legalidad y autorización del envío del archivo." },
+                  { "id": 3, "texto": "El archivo será almacenado en los sistemas asociados a la Plataforma." },
+                  { "id": 4, "texto": "El contenido podrá ser utilizado con fines internos para la mejora, entrenamiento, optimización y perfeccionamiento del modelo de Inteligencia Artificial." },
+                  { "id": 5, "texto": "Dicho uso será exclusivamente técnico y destinado al desarrollo y mejora del funcionamiento de la herramienta." }
+                ],
+                "conclusion": ["En caso de que el Usuario no cuente con la autorización correspondiente y aun así cargue el portafolio, Brain Box FTC no será responsable por reclamaciones, disputas, daños, perjuicios o consecuencias legales derivadas de dicho acto, siendo el Usuario que realizó la carga el único responsable frente al equipo afectado o frente a terceros."]
+              },
+              {
+                "id": "5.4",
+                "titulo": "Confidencialidad",
+                "contenido": ["El equipo propietario y administrador de Brain Box FTC se compromete a:"],
+                "lista": [
+                  { "id": 1, "texto": "No compartir, transferir, ceder ni permitir el acceso a los portafolios a terceros ajenos a la administración técnica de la Plataforma." },
+                  { "id": 2, "texto": "No vender, comercializar, arrendar ni monetizar la información contenida en los archivos subidos por los equipos." },
+                  { "id": 3, "texto": "No divulgar, publicar, distribuir ni utilizar con fines externos cualquier contenido técnico, estratégico, creativo o confidencial incluido en los portafolios sin el consentimiento previo, expreso y verificable del equipo correspondiente." }
+                ],
+                "conclusion": ["El acceso a los portafolios estará restringido exclusivamente a procesos internos necesarios para el funcionamiento técnico, almacenamiento y mejora del sistema de Inteligencia Artificial, bajo medidas razonables de seguridad."]
+              }
+            ]
+          },
+          {
+            "id": "6",
+            "titulo": "PROPIEDAD INTELECTUAL",
+            "subsecciones": [
+              {
+                "id": "6.1",
+                "titulo": "De la Plataforma",
+                "contenido": [
+                  "El software, código fuente y código objeto, diseño gráfico, interfaz de usuario, estructura, arquitectura, bases de datos, algoritmos, modelos de Inteligencia Artificial, sistemas de análisis, funcionalidades, contenido audiovisual, textos, logotipos, nombre comercial, marca, dominio, elementos visuales y cualquier otro componente técnico o creativo que forme parte de Brain Box FTC son propiedad exclusiva de Brain Box FTC o se encuentran debidamente licenciados.",
+                  "Queda estrictamente prohibida su reproducción, copia, modificación, ingeniería inversa, descompilación, redistribución, extracción, explotación comercial o cualquier uso no autorizado, total o parcial, sin el consentimiento previo y por escrito del propietario de la Plataforma.",
+                  "El acceso al Sitio no otorga al Usuario ningún derecho de propiedad intelectual más allá de una licencia limitada, no exclusiva, no transferible y revocable para utilizar la Plataforma conforme a los presentes Términos y Condiciones.",
+                  "En caso de que cualquier Usuario detecte errores, fallos de seguridad, vulnerabilidades técnicas, accesos no autorizados, comportamientos anómalos del sistema o posibles brechas que puedan comprometer la integridad, disponibilidad o confidencialidad de la Plataforma, estará obligado a notificarlo de manera inmediata a los administradores de Brain Box FTC a través de los canales oficiales de contacto.",
+                  "El Usuario se compromete a:"
+                ],
+                "lista": [
+                  { "id": 1, "texto": "No explotar, aprovechar, divulgar públicamente ni compartir dicha vulnerabilidad con terceros." },
+                  { "id": 2, "texto": "No intentar acceder a información, cuentas o sistemas sin autorización." },
+                  { "id": 3, "texto": "Actuar de buena fe y colaborar razonablemente en la resolución del problema." }
+                ],
+                "conclusion": ["El incumplimiento de esta obligación podrá dar lugar a la suspensión inmediata de la cuenta y a las acciones legales correspondientes."]
+              },
+              {
+                "id": "6.2",
+                "titulo": "Del Usuario",
+                "contenido": ["El Usuario conserva la propiedad de:"],
+                "lista": [
+                  { "id": 1, "texto": "Portafolios." },
+                  { "id": 2, "texto": "Cursos creados." },
+                  { "id": 3, "texto": "Contenido subido." }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "7",
+            "titulo": "LIMITACIÓN DE RESPONSABILIDAD",
+            "contenido": [
+              "El servicio se ofrece “tal cual”.",
+              "Brain Box FTC no garantiza:"
+            ],
+            "lista": [
+              { "id": 1, "texto": "Disponibilidad continua." },
+              { "id": 2, "texto": "Exactitud absoluta." },
+              { "id": 3, "texto": "Ausencia de errores técnicos." }
+            ],
+            "contenido_secundario": ["No será responsable por:"],
+            "lista_secundaria": [
+              { "id": 1, "texto": "Fallos técnicos." },
+              { "id": 2, "texto": "Pérdida de datos." },
+              { "id": 3, "texto": "Decisiones tomadas en base a resultados de IA." }
+            ]
+          },
+          {
+            "id": "8",
+            "titulo": "POLÍTICA DE COOKIES",
+            "subsecciones": [
+              {
+                "id": "8.1",
+                "titulo": "¿Qué son las cookies?",
+                "contenido": ["Las cookies son pequeños archivos almacenados en el dispositivo del Usuario que permiten recordar información sobre su sesión y preferencias."]
+              },
+              {
+                "id": "8.2",
+                "titulo": "Tipos de Cookies Utilizadas",
+                "contenido": ["La Plataforma puede utilizar:"],
+                "categorias_cookies": [
+                  {
+                    "id": 1,
+                    "tipo": "Cookies Esenciales",
+                    "descripcion": "Necesarias para:",
+                    "lista": [
+                      { "id": 1, "texto": "Inicio de sesión." },
+                      { "id": 2, "texto": "Seguridad." },
+                      { "id": 3, "texto": "Funcionalidad básica." }
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "tipo": "Cookies de Rendimiento",
+                    "descripcion": "Para:",
+                    "lista": [
+                      { "id": 1, "texto": "Analizar el uso del sitio." },
+                      { "id": 2, "texto": "Mejorar experiencia." },
+                      { "id": 3, "texto": "Optimizar el rendimiento." }
+                    ]
+                  },
+                  {
+                    "id": 3,
+                    "tipo": "Cookies de Personalización",
+                    "descripcion": "Para:",
+                    "lista": [
+                      { "id": 1, "texto": "Recordar idioma." },
+                      { "id": 2, "texto": "Guardar preferencias." },
+                      { "id": 3, "texto": "Ajustar contenido educativo." }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "8.3",
+                "titulo": "Gestión de Cookies",
+                "contenido": ["El Usuario puede:"],
+                "lista": [
+                  { "id": 1, "texto": "Configurar su navegador para rechazar cookies." },
+                  { "id": 2, "texto": "Eliminar cookies almacenadas." }
+                ],
+                "conclusion": ["La desactivación puede afectar la funcionalidad del Sitio."]
+              }
+            ]
+          },
+          {
+            "id": "9",
+            "titulo": "PROTECCIÓN DE DATOS Y SEGURIDAD",
+            "contenido": [
+              "Brain Box FTC implementa medidas técnicas, administrativas y organizativas razonables destinadas a proteger la información almacenada dentro de la Plataforma contra accesos no autorizados, alteraciones, divulgaciones o destrucción indebida.",
+              "Dichas medidas pueden incluir controles de acceso, mecanismos de autenticación, almacenamiento seguro y prácticas estándar de protección digital.",
+              "No obstante, el Usuario reconoce y acepta que ningún sistema informático, servidor o transmisión de datos a través de Internet puede garantizar seguridad absoluta. En consecuencia, Brain Box FTC no puede asegurar ni garantizar que la información esté completamente libre de accesos ilícitos, ataques cibernéticos, interrupciones técnicas o vulnerabilidades externas fuera de su control razonable.",
+              "El uso de la Plataforma se realiza bajo el propio riesgo del Usuario en lo que respecta a la transmisión de información digital."
+            ]
+          },
+          {
+            "id": "10",
+            "titulo": "MODIFICACIONES DE LOS TÉRMINOS",
+            "contenido": ["Brain Box FTC se reserva el derecho de modificar, actualizar o reemplazar total o parcialmente los presentes Términos y Condiciones en cualquier momento, cuando lo considere necesario para:"],
+            "lista": [
+              { "id": 1, "texto": "Cumplir con cambios legales o regulatorios." },
+              { "id": 2, "texto": "Adaptarse a nuevas funcionalidades de la Plataforma." },
+              { "id": 3, "texto": "Mejorar la claridad o alcance de las disposiciones." }
+            ],
+            "conclusion": [
+              "Las modificaciones entrarán en vigor a partir de su publicación en el Sitio. La fecha de última actualización será modificada en consecuencia.",
+              "El uso continuo de la Plataforma después de la publicación de cambios constituirá la aceptación expresa de las nuevas disposiciones."
+            ]
+          },
+          {
+            "id": "11",
+            "titulo": "TERMINACIÓN Y SUSPENSIÓN",
+            "contenido": ["Brain Box FTC podrá suspender, restringir o cancelar temporal o definitivamente cuentas de Usuario, sin obligación de previo aviso, en caso de:"],
+            "lista": [
+              { "id": 1, "texto": "Fraude o intento de fraude." },
+              { "id": 2, "texto": "Manipulación intencional o inintencional del sistema." },
+              { "id": 3, "texto": "Uso indebido de la Plataforma o sus herramientas." },
+              { "id": 4, "texto": "Violación de los presentes Términos y Condiciones." },
+              { "id": 5, "texto": "Conductas que puedan comprometer la seguridad, estabilidad o reputación de la Plataforma." }
+            ],
+            "conclusion": ["La terminación podrá implicar la eliminación de contenido asociado a la cuenta, sin que ello genere derecho a compensación alguna."]
+          },
+          {
+            "id": "12",
+            "titulo": "LEGISLACIÓN APLICABLE Y LIMITACIÓN DE RECLAMACIONES",
+            "contenido": [
+              "Estos Términos y Condiciones se regirán e interpretarán de conformidad con las leyes aplicables en la jurisdicción del responsable legal del Sitio, sin perjuicio de las disposiciones imperativas de protección al consumidor que pudieran resultar aplicables.",
+              "En la máxima medida permitida por la ley, el Usuario acepta que cualquier reclamación, disputa o controversia derivada del uso de la Plataforma deberá:"
+            ],
+            "lista": [
+              { "id": 1, "texto": "Presentarse de manera individual y no como parte de una acción colectiva, grupal o representativa." },
+              { "id": 2, "texto": "Limitarse exclusivamente a daños directos comprobables." },
+              { "id": 3, "texto": "Excluir cualquier reclamación por daños indirectos, consecuenciales, punitivos, especulativos o pérdida de oportunidades competitivas." }
+            ],
+            "conclusion": ["El Usuario reconoce que el uso de la Plataforma es voluntario y que asume los riesgos inherentes al uso de herramientas digitales y sistemas automatizados."]
+          },
+          {
+            "id": "13",
+            "titulo": "ACEPTACIÓN FINAL Y RENUNCIA",
+            "contenido": ["Al registrarse, acceder o utilizar Brain Box FTC, el Usuario declara que:"],
+            "lista": [
+              { "id": 1, "texto": "Ha leído, comprendido y aceptado íntegramente los presentes Términos y Condiciones." },
+              { "id": 2, "texto": "Acepta el uso educativo y orientativo de la Inteligencia Artificial." },
+              { "id": 3, "texto": "Acepta el almacenamiento de portafolios con fines de mejora técnica del modelo." },
+              { "id": 4, "texto": "Reconoce que los resultados generados no garantizan desempeño competitivo en ningún contexto." },
+              { "id": 5, "texto": "Acepta la Política de Cookies y el tratamiento de datos descrito en el presente documento." },
+              { "id": 6, "texto": "Acepta el funcionamiento de cursos, lecciones, quizzes y certificados." }
+            ],
+            "conclusion": [
+              "Asimismo, en la máxima medida permitida por la legislación aplicable, el Usuario renuncia a presentar reclamaciones, demandas o acciones legales contra Brain Box FTC derivadas del uso normal de la Plataforma, de los resultados generados por la IA o de decisiones tomadas con base en dichos resultados, salvo en casos de dolo o incumplimiento grave comprobable por parte del administrador.",
+              "El uso continuado de la Plataforma constituye aceptación expresa y vinculante de estos Términos."
+            ]
+          }
+        ]
+  }
+}

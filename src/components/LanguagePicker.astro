@@ -1,0 +1,19 @@
+---
+// @Isanchezv
+// src/components/LanguagePicker.astro
+const { pathname } = Astro.url;
+
+function switchLang(newLang: string) {
+  const segments = pathname.split("/");
+  if (segments.length > 1) {
+    segments[1] = newLang;
+  }
+
+  return segments.join("/") || `/${newLang}`;
+}
+---
+
+<div class="flex gap-2">
+  <a href={switchLang("es")} class="hover:underline">ES</a>
+  <a href={switchLang("en")} class="hover:underline">EN</a>
+</div>

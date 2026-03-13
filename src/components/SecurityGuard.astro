@@ -1,0 +1,113 @@
+---
+// @Isanchezv
+// src/components/SecurityGuard.astro
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+
+interface Props {
+  enabled?: boolean;
+}
+
+const { enabled = true } = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+---
+
+{enabled && (
+  <div id="security-overlay" class="fixed inset-0 z-10000 bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 hidden opacity-0 transition-all duration-500">
+    <div class="max-w-md text-center">
+      <div class="mb-6 inline-flex items-center justify-center w-24 h-24 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-500">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+      </div>
+      
+      <h2 class="text-4xl font-black text-white uppercase italic mb-4 tracking-tighter text-balance">
+        {t('security.title')}
+      </h2>
+      
+      <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-10 leading-relaxed">
+        {t('security.description')} <br/>
+        <span class="text-yellow-500/80">{t('security.instruction')}</span>
+      </p>
+
+      <button id="close-security" class="bg-yellow-500 text-black px-12 py-5 rounded-2xl font-black uppercase italic text-sm hover:bg-white transition-all shadow-2xl shadow-yellow-500/10">
+        {t('security.button')}
+      </button>
+    </div>
+  </div>
+)}
+
+<script>
+  function setupSecurity() {
+    const overlay = document.getElementById('security-overlay');
+    const closeBtn = document.getElementById('close-security');
+    
+    const showAlert = () => {
+      if (overlay && overlay.classList.contains('hidden')) {
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.add('opacity-100'), 10);
+      }
+    };
+
+    const hideAlert = () => {
+      if (overlay) {
+        overlay.classList.remove('opacity-100');
+        setTimeout(() => overlay.classList.add('hidden'), 500);
+      }
+    };
+    const checkDevTools = () => {
+      const start = performance.now();
+      debugger; 
+      if (performance.now() - start > 100) {
+        showAlert();
+      }
+    };
+    setInterval(checkDevTools, 2000);
+
+    document.addEventListener('keydown', (e) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      const isOption = e.altKey;
+      const isShift = e.shiftKey;
+
+      const forbidden = [
+        e.key === 'F12',
+        (isCmdOrCtrl && isShift && (e.key === 'I' || e.key === 'J' || e.key === 'C')),
+        (isCmdOrCtrl && isOption && (e.key === 'i' || e.key === 'j' || e.key === 'u')),
+        (isCmdOrCtrl && e.key === 'u'),
+        (isCmdOrCtrl && e.key === 'p'),
+        (isCmdOrCtrl && e.key === 's')
+      ];
+
+      if (forbidden.some(Boolean)) {
+        e.preventDefault();
+        showAlert();
+      }
+    }, true);
+
+    document.addEventListener('contextmenu', (e) => { e.preventDefault(); showAlert(); });
+    window.addEventListener('blur', showAlert);
+    document.addEventListener('mouseleave', showAlert);
+
+    closeBtn?.addEventListener('click', hideAlert);
+  }
+  setupSecurity();
+  document.addEventListener('astro:page-load', setupSecurity);
+</script>
+
+<style is:global>
+  body.security-active {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+</style>
+
+<script is:inline>
+  document.body.classList.add('security-active');
+</script>

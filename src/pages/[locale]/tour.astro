@@ -1,0 +1,25 @@
+---
+// Tour.astro
+---
+
+<script>
+    import { driver } from "driver.js";
+    import "driver.js/dist/driver.css";
+  
+    const d = driver({
+      showProgress: true,
+      steps: [
+        { element: '#logo', popover: { title: 'Tu Marca', description: 'Aquí empieza todo.' } },
+        { element: '#search-bar', popover: { title: 'Buscador', description: 'Encuentra lo que necesites rápido.' } },
+        { element: '#footer', popover: { title: 'Contacto', description: '¡Hablemos!' } },
+      ]
+    });
+  
+    // Puedes activarlo con un botón o automáticamente al cargar
+    const startBtn = document.getElementById('start-tour');
+    startBtn?.addEventListener('click', () => d.drive());
+  </script>
+  
+  <button id="start-tour" class="px-4 py-2 bg-blue-600 text-white rounded">
+    ¿Cómo funciona esta página?
+  </button>

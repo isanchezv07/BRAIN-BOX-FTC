@@ -1,0 +1,155 @@
+---
+// @Isanchezv
+// src/components/WorkInProgress.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const usefulLinks = [
+  { href: `/${lang}/dashboard`, text: t('errors.404.links.dashboard') },
+  { href: `/${lang}/courses`, text: t('errors.404.links.courses') },
+];
+---
+
+<Layout title="UNDER CONSTRUCTION">
+  <main class="relative min-h-screen w-full flex flex-col items-center justify-center bg-[#080808] overflow-hidden font-mono text-yellow-500">
+    
+    <div class="absolute inset-0 z-0 pointer-events-none">
+      <div class="w-full h-[3px] bg-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.5)] absolute animate-scan"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(234,179,8,0.05)_0%,transparent_70%)]"></div>
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(#eab308 1px, transparent 1px), linear-gradient(90deg, #eab308 1px, transparent 1px); background-size: 50px 50px;"></div>
+    </div>
+
+    <div class="absolute top-0 w-full overflow-hidden h-8 bg-yellow-500 flex items-center z-30">
+        <div class="flex whitespace-nowrap animate-marquee">
+            {Array(10).fill(0).map(() => (
+                <span class="text-black font-black text-xs tracking-tighter mx-4 italic">
+                    {t('wip.marquee.top')}
+                </span>
+            ))}
+        </div>
+    </div>
+
+    <div class="relative z-10 select-none">
+      <h1 class="text-[25vw] md:text-[30vw] font-black leading-none tracking-tighter text-transparent stroke-text opacity-20 uppercase">
+        WIP
+      </h1>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+        <h2 class="text-3xl md:text-6xl font-black text-white uppercase tracking-[0.1em] mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+            {t('wip.title')}
+        </h2>
+        
+        <div class="bg-yellow-950/30 backdrop-blur-sm border-x-2 border-yellow-500 px-6 py-4 max-w-lg">
+          <p class="typewriter-text text-sm md:text-xl font-bold uppercase tracking-widest text-yellow-500">
+             {t('wip.status')}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="relative z-20 mt-16 w-full max-w-5xl px-6">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-10 border-t border-yellow-500/20 pt-10">
+        
+        <div class="flex-shrink-0">
+          <a href={`/${lang}/`} 
+             class="group relative inline-block px-10 py-4 bg-yellow-600 text-black font-black uppercase text-[11px] tracking-[0.3em] transition-all duration-300 hover:bg-white hover:-translate-y-1 active:translate-y-0">
+            {t('wip.backHome')}
+            <span class="absolute -bottom-1.5 -right-1.5 w-full h-full border-b border-r border-yellow-400/50 group-hover:border-white transition-all"></span>
+          </a>
+        </div>
+    
+        <nav class="flex flex-wrap items-center justify-center md:justify-end gap-x-8 gap-y-3">
+          {usefulLinks.map((link, index) => (
+            <div class="flex items-center gap-4">
+              <a href={link.href} 
+                 class="text-[10px] font-bold text-yellow-500/40 hover:text-white uppercase tracking-[0.25em] transition-all duration-300">
+                {link.text}
+              </a>
+              {index !== usefulLinks.length - 1 && (
+                <span class="w-1 h-1 bg-yellow-900 rotate-45 hidden sm:block"></span>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+    
+      <div class="mt-8 flex justify-between items-center text-[8px] text-yellow-900 uppercase tracking-[0.5em] font-bold">
+        <span>Build: v2.0.26_Alpha</span>
+        <span class="animate-pulse">{t('wip.loading')}</span>
+      </div>
+    </footer>
+
+    <div class="absolute bottom-0 w-full overflow-hidden h-8 bg-yellow-500 flex items-center z-30">
+        <div class="flex whitespace-nowrap animate-marquee-reverse">
+            {Array(10).fill(0).map(() => (
+                <span class="text-black font-black text-xs tracking-tighter mx-4 italic">
+                    {t('wip.marquee.bottom')}
+                </span>
+            ))}
+        </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .stroke-text {
+    -webkit-text-stroke: 2px rgba(234, 179, 8, 0.5);
+  }
+
+  @keyframes scan {
+    0% { top: -10%; }
+    100% { top: 110%; }
+  }
+  .animate-scan {
+    animation: scan 6s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes marquee-reverse {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  .animate-marquee-reverse {
+    animation: marquee-reverse 30s linear infinite;
+  }
+
+  .typewriter-text {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 4px solid #eab308;
+    width: 0;
+    animation: 
+      typing 3s steps(40, end) forwards,
+      blink-caret 0.8s step-end infinite;
+    animation-delay: 0.8s;
+  }
+
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: #eab308 }
+  }
+
+  @media (max-width: 768px) {
+    .typewriter-text {
+      white-space: normal;
+      width: auto;
+      border-right: none;
+      animation: fade-in 1s ease-out forwards;
+    }
+  }
+</style>

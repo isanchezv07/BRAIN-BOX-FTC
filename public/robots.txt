@@ -1,0 +1,38 @@
+User-agent: *
+
+Disallow: /es/dashboard
+Disallow: /en/dashboard
+Disallow: /pt/dashboard
+Disallow: /es/perfil
+Disallow: /en/perfil
+Disallow: /pt/perfil
+
+Disallow: */admin/
+Disallow: */mod/
+Disallow: */teacher/
+
+Disallow: */banned
+
+Disallow: */signin
+Disallow: */register
+Disallow: */forgot-password
+Disallow: */update-password
+Disallow: */login-emergency
+Disallow: */verify-email
+Disallow: /auth/callback
+Disallow: /api/auth/
+
+Disallow: /api/
+
+Allow: /es/courses/
+Allow: /en/courses/
+Allow: /pt/courses/
+Allow: /es/docs/
+Allow: /en/docs/
+Allow: /pt/docs/
+Allow: /es/explore/
+Allow: /en/explore/
+Allow: /pt/explore/
+Allow: /legal/
+
+Sitemap: https://brain-box-ftc.vercel.app/sitemap-0.xml

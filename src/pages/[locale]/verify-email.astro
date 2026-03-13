@@ -1,0 +1,80 @@
+---
+// @Isanchezv
+// src/pages/[locale]/verify-email.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Layout title="Verifica tu correo">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <div 
+    class="max-w-md mx-auto mt-20 p-10 bg-[#0a0a0a] border border-white/5 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group"
+    x-data="{ verified: false }"
+    x-init="
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#2563eb', '#ffffff', '#4f46e5']
+      });
+    "
+  >
+    <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/10 blur-[80px] rounded-full"></div>
+
+    <div class="relative">
+        <div class="w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-blue-500/20 transition-transform duration-700 group-hover:scale-110">
+          <span class="text-5xl animate-bounce">📩</span>
+        </div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-24 border border-blue-500/30 rounded-full animate-ping opacity-20"></div>
+    </div>
+    
+    <div class="relative z-10">
+        <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-4 leading-none">
+          {t('auth.verify.title')} <span class="text-blue-500 text-glow">{t('auth.verify.titleHighlight')}</span>
+        </h1>
+        
+        <div class="h-1 w-12 bg-blue-600 mx-auto mb-6 rounded-full"></div>
+        
+        <p class="text-gray-400 text-sm leading-relaxed mb-10 px-4">
+          {t('auth.verify.description')} 
+          <br/><br/>
+          <span class="text-white font-bold bg-white/5 px-2 py-1 rounded-md">
+            {t('auth.verify.instruction')}
+          </span>
+        </p>
+
+        <div class="space-y-4">
+          <a 
+            href={`/${lang}/signin`} 
+            class="group relative block w-full py-5 bg-blue-600 text-white font-black uppercase italic rounded-2xl overflow-hidden transition-all hover:bg-blue-500 active:scale-95 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+          >
+            <span class="relative z-10 tracking-widest text-xs">{t('auth.verify.button')}</span>
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+          </a>
+          
+          <button 
+            onclick="window.location.reload()"
+            class="text-[10px] text-gray-600 uppercase font-bold tracking-[0.2em] hover:text-gray-400 transition-colors cursor-pointer"
+          >
+            {t('auth.verify.resend')}
+          </button>
+        </div>
+    </div>
+  </div>
+
+  <style>
+    .text-glow {
+      text-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+    }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+    div[x-data] { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</Layout>

@@ -1,0 +1,89 @@
+---
+import Layout from '@/layouts/Layout.astro';
+const { locale } = Astro.params;
+---
+
+<Layout title="Tactical Team Intelligence">
+  <main class="relative min-h-screen bg-[#020202] text-white flex items-center justify-center p-6 overflow-hidden">
+    
+    <div class="absolute inset-0 z-0">
+      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-600/10 blur-[120px] rounded-full"></div>
+    </div>
+
+    <div class="relative z-10 max-w-2xl w-full text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+        </span>
+        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">System_Online // Satellite_Linked</span>
+      </div>
+
+      <h1 class="text-7xl md:text-8xl font-black italic uppercase tracking-tighter mb-4 leading-none">
+        DEEP <span class="text-blue-600">SCAN</span>
+      </h1>
+      <p class="text-zinc-500 font-mono text-xs uppercase tracking-[0.3em] mb-12 italic">
+        Análisis de Inteligencia Multianual (2022-2024)
+      </p>
+
+      <form id="searchForm" class="relative group">
+        <div class="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+        
+        <div class="relative flex flex-col md:flex-row gap-4 bg-black/40 backdrop-blur-xl p-4 rounded-3xl border border-white/10">
+          <input 
+            type="number" 
+            id="teamNumber"
+            placeholder="ENTER TEAM #" 
+            class="flex-1 bg-transparent px-6 py-4 text-2xl font-black italic uppercase outline-none placeholder:text-zinc-800"
+            required
+          />
+          <button 
+            type="submit"
+            class="bg-blue-600 hover:bg-white hover:text-black text-white px-10 py-4 rounded-2xl font-black italic uppercase transition-all duration-300 active:scale-95"
+          >
+            Execute_Scan
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-20 grid grid-cols-3 gap-4 opacity-20">
+        <div class="text-center">
+          <p class="text-[8px] font-bold uppercase">Database</p>
+          <p class="text-[10px] font-mono">FIRST_API_v2.0</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[8px] font-bold uppercase">Analysis</p>
+          <p class="text-[10px] font-mono">3_SEASON_SYNC</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[8px] font-bold uppercase">Security</p>
+          <p class="text-[10px] font-mono">ENCRYPTED_AES</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline define:vars={{ locale }}>
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('teamNumber');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const number = input.value;
+    if (number) {
+      // Redirigimos a la ruta dinámica que ya creamos
+      window.location.href = `/${locale}/teams/${number}`;
+    }
+  });
+</script>
+
+<style>
+  /* Quitar flechas del input number */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+</style>

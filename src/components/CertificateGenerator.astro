@@ -1,0 +1,180 @@
+---
+// @Isanchezv
+// src/components/CertificateGenerator.astro
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { ViewTransitions } from 'astro:transitions';
+import QRCode from 'qrcode';
+
+interface Props {
+  userName: string;
+  courseTitle: string;
+  courseId: string;
+  userId: string;
+}
+
+const { userName, courseTitle, courseId, userId } = Astro.props;
+const lang = getLangFromUrl(Astro.url); 
+const t = useTranslations(lang);
+
+const supabaseAdmin = getSupabaseAdmin();
+let certificateId = "";
+
+const { data: existing } = await supabaseAdmin
+  .from('certificates')
+  .select('id')
+  .eq('user_id', userId)
+  .eq('course_id', courseId)
+  .single();
+
+if (existing) {
+  certificateId = existing.id;
+} else {
+  const { data: created } = await supabaseAdmin
+    .from('certificates')
+    .insert({ user_id: userId, course_id: courseId, student_name: userName, course_title: courseTitle })
+    .select().single();
+  certificateId = created?.id || "";
+}
+
+const verifyUrl = `${Astro.url.origin}/${lang}/verify/${certificateId}`;
+const qrCodeDataUri = await QRCode.toDataURL(verifyUrl, { 
+    margin: 1, 
+    width: 400,
+    color: { dark: '#000000', light: '#ffffff' } 
+});
+
+const certificateBaseImage = "/certificado.png"; 
+
+const canvasLabels = {
+  downloadBtn: t('cert.downloadBtn') || "Descargar PDF",
+  locale: lang === 'es' ? 'es-ES' : 'en-US',
+  currentLang: lang 
+};
+---
+
+<head>
+  <ViewTransitions />
+</head>
+
+<div class="certificate-wrapper w-full max-w-4xl mx-auto px-4 py-10">
+  <div class="relative group">
+    <div class="relative overflow-hidden rounded-xl shadow-2xl border border-white/10 bg-white">
+        <canvas id="certificate-canvas" width="2000" height="1414" class="w-full h-auto bg-white opacity-0 transition-opacity duration-700"></canvas>
+    </div>
+    
+    <button id="download-certificate-btn" class="mt-8 mx-auto flex items-center gap-3 bg-[#2D8F3C] text-white hover:bg-black px-12 py-5 rounded-2xl font-black uppercase italic text-xs transition-all shadow-xl active:scale-95">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      {canvasLabels.downloadBtn}
+    </button>
+  </div>
+</div>
+
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script define:vars={{ userName, courseTitle, canvasLabels, qrCodeDataUri, certificateBaseImage, certificateId }}>
+  
+  const draw = () => {
+    const canvas = document.getElementById('certificate-canvas');
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width; 
+    const H = canvas.height;
+
+    const texts = {
+      es: {
+        cert: "CERTIFICADO DE",
+        rec: "RECONOCIMIENTO",
+        award: "BRAIN BOX OTORGA A:",
+        compl: "Por haber completado satisfactoriamente el curso de:",
+        date: "Expedido el",
+        scan: "Escanea para verificar"
+      },
+      en: {
+        cert: "CERTIFICATE OF",
+        rec: "RECOGNITION",
+        award: "BRAIN BOX AWARDS TO:",
+        compl: "For having successfully completed the course of:",
+        date: "Issued on",
+        scan: "Scan to verify"
+      }
+    };
+
+    const i18n = texts[canvasLabels.currentLang] || texts.es;
+
+    const pos = {
+      tituloCert:     { x: W/2, y: 340,  font: '700 55px sans-serif', color: '#7A7A7A' },
+      reconocimiento: { x: W/2, y: 480,  font: '900 130px sans-serif', color: '#1a1a1a' },
+      otorgaA:        { x: W/2, y: 580,  font: '600 40px sans-serif', color: '#4b5563' },
+      nombreAlumno:   { x: W/2, y: 760,  font: 'italic 900 150px serif', color: '#000000' },
+      fraseCurso:     { x: W/2, y: 860,  font: '600 45px sans-serif', color: '#4b5563' },
+      tituloCurso:    { x: W/2, y: 960,  font: '900 80px sans-serif', color: '#2D8F3C' },
+      fecha:          { x: W/2, y: H-400, font: 'bold 30px sans-serif', color: '#94a3b8' },
+      qr:             { x: 297, y: H-500, size: 280 },
+      idTexto:        { x: 300 + 140, y: H-160, font: 'bold 24px monospace', color: '#000000' }
+    };
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = certificateBaseImage;
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, W, H);
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = pos.tituloCert.color;
+      ctx.font = pos.tituloCert.font;
+      ctx.fillText(i18n.cert, pos.tituloCert.x, pos.tituloCert.y);
+
+      ctx.fillStyle = pos.reconocimiento.color;
+      ctx.font = pos.reconocimiento.font;
+      ctx.fillText(i18n.rec, pos.reconocimiento.x, pos.reconocimiento.y);
+
+      ctx.fillStyle = pos.otorgaA.color;
+      ctx.font = pos.otorgaA.font;
+      ctx.fillText(i18n.award, pos.otorgaA.x, pos.otorgaA.y);
+
+      ctx.fillStyle = pos.nombreAlumno.color;
+      ctx.font = pos.nombreAlumno.font;
+      ctx.fillText(userName.toUpperCase(), pos.nombreAlumno.x, pos.nombreAlumno.y);
+
+      ctx.fillStyle = pos.fraseCurso.color;
+      ctx.font = pos.fraseCurso.font;
+      ctx.fillText(i18n.compl, pos.fraseCurso.x, pos.fraseCurso.y);
+
+      ctx.fillStyle = pos.tituloCurso.color;
+      ctx.font = pos.tituloCurso.font;
+      ctx.fillText(courseTitle.toUpperCase(), pos.tituloCurso.x, pos.tituloCurso.y);
+
+      const dateStr = new Date().toLocaleDateString(canvasLabels.locale, { day:'numeric', month:'long', year:'numeric' });
+      ctx.fillStyle = pos.fecha.color;
+      ctx.font = pos.fecha.font;
+      ctx.fillText(`${i18n.date} ${dateStr}`, pos.fecha.x, pos.fecha.y);
+
+      const qrImg = new Image();
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, pos.qr.x, pos.qr.y, pos.qr.size, pos.qr.size);
+        ctx.font = pos.idTexto.font;
+        ctx.fillStyle = pos.idTexto.color;
+        ctx.fillText(i18n.scan, pos.idTexto.x, pos.idTexto.y);
+        canvas.classList.remove('opacity-0');
+      };
+      qrImg.src = qrCodeDataUri;
+    };
+  };
+
+  const download = () => {
+    const canvas = document.getElementById('certificate-canvas');
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    doc.addImage(imgData, 'PNG', 0, 0, 297, 210);
+    doc.save(`Certificado-${userName.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  document.addEventListener('astro:page-load', () => {
+    draw();
+    setTimeout(draw, 800);
+    document.getElementById('download-certificate-btn').onclick = download;
+  });
+</script>

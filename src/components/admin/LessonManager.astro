@@ -1,0 +1,183 @@
+---
+// @Isanchezv
+// src/components/admin/LessonManager.astro
+import { marked } from 'marked';
+import { useTranslations } from "@/i18n/utils";
+import { supabase } from "@/lib/supabase";
+
+const { lessons, selectedCourseId, lessonToEdit, editLessonId, adminPath, lang } = Astro.props;
+const t = useTranslations(lang);
+
+const { data: currentCourse } = await supabase.from("courses").select("title").eq("id", selectedCourseId).single();
+const courseFolder = currentCourse?.title?.toLowerCase().trim().replace(/\s+/g, '-') || "";
+
+const allQuizzes = import.meta.glob('/src/data/quizzes/**/*.json');
+const availableQuizzes = Object.keys(allQuizzes)
+  .filter(path => path.includes(`/${lang}/${courseFolder}/`))
+  .map(path => path.split('/').pop()?.replace('.json', '')); 
+
+const confirmDeleteMsg = t('admin.lessons.confirmDelete') || '¿Estás seguro de que deseas eliminar esta lección?';
+---
+
+<style>
+  #markdown-preview h1, #markdown-preview h2, #markdown-preview h3 {
+    font-style: italic; font-weight: 900; text-transform: uppercase;
+    margin-top: 1.8em !important; margin-bottom: 0.8em !important; color: #fff !important;
+  }
+  #markdown-preview p { margin-bottom: 1.5rem !important; line-height: 1.8; color: #a1a1aa !important; }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+  
+  .tab-active {
+    background-color: #2563eb !important;
+    color: white !important;
+    border-color: #2563eb !important;
+  }
+</style>
+
+<div class="space-y-6 animate-in fade-in duration-700">
+  <div class="bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+    <form method="POST" class="p-8 space-y-6">
+      <input type="hidden" name="_action" value={lessonToEdit ? "update-lesson" : "create-lesson"} />
+      {lessonToEdit && <input type="hidden" name="id" value={lessonToEdit.id} />}
+      <input type="hidden" name="course_id" value={selectedCourseId} />
+      
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <input name="title" value={lessonToEdit?.title || ""} placeholder={t('admin.lessons.title.placeholder')} class="md:col-span-3 p-4 bg-black border border-white/10 rounded-2xl text-white outline-none focus:border-blue-500 font-bold" required />
+        <div class="md:col-span-2 flex items-center justify-between bg-black border border-white/10 rounded-2xl px-6">
+          <span class="text-[9px] font-black text-gray-500 uppercase italic">{t('admin.lessons.freeLabel')}</span>
+          <input type="checkbox" name="is_free" value="true" checked={lessonToEdit?.is_free} class="accent-blue-500 w-5 h-5" />
+        </div>
+        <input name="order_index" type="number" value={lessonToEdit?.order_index || lessons.length + 1} class="p-4 bg-black border border-white/10 rounded-2xl text-white text-center font-bold" />
+      </div>
+
+      <div class="border border-white/5 rounded-[2.5rem] overflow-hidden bg-black/50">
+        <div class="flex bg-black/40 border-b border-white/5 p-1">
+          <button type="button" id="btn-edit" class="tab-active flex-1 md:flex-none px-8 py-4 text-[10px] font-black uppercase italic tracking-widest rounded-xl transition-all duration-300">
+            {t('admin.lessons.tab.edit')}
+          </button>
+          <button type="button" id="btn-view" class="flex-1 md:flex-none px-8 py-4 text-[10px] font-black uppercase italic tracking-widest text-gray-500 rounded-xl transition-all duration-300">
+            {t('admin.lessons.tab.preview')}
+          </button>
+        </div>
+        <div class="p-2">
+          <div id="container-edit" class="block">
+            <textarea id="markdown-editor" name="content" rows="12" class="w-full p-6 bg-transparent text-gray-400 font-mono text-sm outline-none resize-none" placeholder={t('admin.lessons.editor.placeholder')}>{lessonToEdit?.content || ""}</textarea>
+          </div>
+          <div id="container-view" class="hidden h-[400px] overflow-y-auto custom-scrollbar p-8 prose prose-invert max-w-none">
+             <div id="markdown-preview">
+                <Fragment set:html={marked.parse(lessonToEdit?.content || '')} />
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-blue-600/5 border border-blue-500/10 rounded-[3rem] p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="space-y-4">
+          <label class="text-[10px] font-black uppercase text-blue-500 italic tracking-widest">{t('admin.lessons.quiz.title')}</label>
+          <select name="quiz_id" class="w-full p-4 bg-black border border-white/10 rounded-2xl text-white outline-none">
+            <option value="">{t('admin.lessons.quiz.none')}</option>
+            {availableQuizzes.map(q => (
+              <option value={q} selected={lessonToEdit?.quiz_data === q}>{q}.json</option>
+            ))}
+          </select>
+        </div>
+
+        <div class="space-y-4 border-l border-white/5 pl-0 lg:pl-8">
+          <label class="text-[10px] font-black uppercase text-green-500 italic tracking-widest">{t('admin.lessons.quiz.limitLabel')}</label>
+          <input name="quiz_questions_limit" type="number" value={lessonToEdit?.quiz_questions_limit || ""} placeholder={t('admin.lessons.quiz.limitPlaceholder')} class="w-full p-4 bg-black border border-white/10 rounded-2xl text-white text-center font-bold outline-none focus:border-green-500" />
+          <span class="text-[7px] font-bold text-gray-600 uppercase block text-center italic">{t('admin.lessons.quiz.limitHint')}</span>
+        </div>
+
+        <div class="space-y-4 border-l border-white/5 pl-0 lg:pl-8">
+          <label class="text-[10px] font-black uppercase text-yellow-500 italic tracking-widest">{t('admin.lessons.quiz.timerLabel')}</label>
+          <select id="timer-selector" name="quiz_timer_enabled" class="w-full p-4 bg-black border border-white/10 rounded-2xl text-xs text-white outline-none focus:border-yellow-500 font-bold">
+            <option value="false" selected={String(lessonToEdit?.quiz_timer_enabled) === "false"}>{t('admin.lessons.quiz.timerOff')}</option>
+            <option value="true" selected={String(lessonToEdit?.quiz_timer_enabled) === "true"}>{t('admin.lessons.quiz.timerOn')}</option>
+          </select>
+          <div id="timer-input-wrapper" class={lessonToEdit?.quiz_timer_enabled ? 'block' : 'hidden'}>
+            <input type="number" name="quiz_timer_seconds" value={lessonToEdit?.quiz_timer_seconds || 30} class="w-full p-4 bg-black border border-yellow-500/30 rounded-2xl text-white text-center font-bold outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full py-5 bg-white text-black font-black uppercase italic rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95">
+        {t('admin.lessons.buttons.save')}
+      </button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    {lessons.map(lesson => (
+      <div class={`p-5 rounded-[2rem] border flex justify-between items-center transition-all ${editLessonId === lesson.id ? 'border-blue-500 bg-blue-500/10' : 'bg-[#0a0a0a] border-white/5'}`}>
+        <div class="flex flex-col truncate pr-4">
+          <div class="flex items-center gap-2">
+            <span class="text-[7px] font-bold text-blue-500 uppercase italic">{t('admin.lessons.step')} {lesson.order_index}</span>
+            {lesson.quiz_data && (
+              <span class="bg-blue-500/10 text-blue-500 text-[6px] px-2 py-0.5 rounded-full font-black uppercase border border-blue-500/20">
+                Quiz {lesson.quiz_questions_limit ? `(${lesson.quiz_questions_limit} Qs)` : ''} {lesson.quiz_timer_enabled ? '⏱️' : ''}
+              </span>
+            )}
+          </div>
+          <p class="text-white text-xs font-bold truncate italic uppercase mt-1">{lesson.title}</p>
+        </div>
+        <div class="flex gap-2">
+          <a href={`${adminPath}?course=${selectedCourseId}&edit=${lesson.id}`} class="p-3 bg-white/5 rounded-xl hover:bg-blue-600 transition-all text-xs">✏️</a>
+          <form method="POST" onsubmit={`return confirm('${confirmDeleteMsg}')`}>
+            <input type="hidden" name="_action" value="delete-lesson" />
+            <input type="hidden" name="id" value={lesson.id} />
+            <button class="p-3 bg-white/5 rounded-xl hover:bg-red-600 transition-all text-xs">✕</button>
+          </form>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  import { marked } from 'marked';
+  const init = () => {
+    const editor = document.getElementById('markdown-editor') as HTMLTextAreaElement;
+    const preview = document.getElementById('markdown-preview');
+    const btnEdit = document.getElementById('btn-edit');
+    const btnView = document.getElementById('btn-view');
+    const contEdit = document.getElementById('container-edit');
+    const contView = document.getElementById('container-view');
+
+    const updatePreview = () => {
+       if (editor && preview) preview.innerHTML = marked.parse(editor.value);
+    };
+
+    btnView?.addEventListener('click', () => {
+      updatePreview();
+      contEdit?.classList.replace('block', 'hidden');
+      contView?.classList.replace('hidden', 'block');
+      
+      btnView.classList.add('tab-active');
+      btnView.classList.remove('text-gray-500');
+      btnEdit?.classList.remove('tab-active');
+      btnEdit?.classList.add('text-gray-500');
+    });
+
+    btnEdit?.addEventListener('click', () => {
+      contEdit?.classList.replace('hidden', 'block');
+      contView?.classList.replace('block', 'hidden');
+      
+      btnEdit.classList.add('tab-active');
+      btnEdit.classList.remove('text-gray-500');
+      btnView?.classList.remove('tab-active');
+      btnView?.classList.add('text-gray-500');
+    });
+
+    editor?.addEventListener('input', updatePreview);
+
+    const selector = document.getElementById('timer-selector') as HTMLSelectElement;
+    selector?.addEventListener('change', (e) => {
+      const wrapper = document.getElementById('timer-input-wrapper');
+      if (wrapper) wrapper.classList.toggle('hidden', (e.target as HTMLSelectElement).value !== 'true');
+    });
+  };
+  
+  document.addEventListener('astro:page-load', init);
+  init();
+</script> 

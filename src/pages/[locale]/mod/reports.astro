@@ -1,0 +1,217 @@
+---
+// @Isanchezv
+// src/pages/[locale]/mod/reports.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { data: auditData } = await supabase
+  .from("audit_logs")
+  .select(`*, profiles:target_user_id(username), mod:moderator_id(username)`)
+  .order('created_at', { ascending: false })
+  .limit(10);
+
+const { data: allUsers } = await supabase
+  .from("profiles")
+  .select("id, username, full_name");
+
+const usersJSON = JSON.stringify(allUsers || []);
+---
+
+<Layout title="System Ops | Admin Control">
+  <main 
+    class="min-h-screen bg-[#050505] pt-24 pb-12 px-4 selection:bg-blue-500/30" 
+    x-data={`{
+      query: '',
+      allUsers: ${usersJSON},
+      filteredUsers: [],
+      selectedUser: null,
+      showOTP: false,
+      generatedOTP: '',
+      loading: false,
+
+      filterUsers() {
+        if (this.query.length < 2) { this.filteredUsers = []; return; }
+        const s = this.query.toLowerCase();
+        this.filteredUsers = this.allUsers.filter(u => 
+          (u.username?.toLowerCase().includes(s)) || 
+          (u.full_name?.toLowerCase().includes(s))
+        ).slice(0, 5);
+      },
+
+      selectUser(user) {
+        this.selectedUser = user;
+        this.query = '';
+        this.filteredUsers = [];
+      },
+
+      async executeAction(actionType) {
+        if (!confirm('¿Ejecutar comando crítico: ' + actionType + '?')) return;
+        
+        this.loading = true;
+        try {
+          const response = await fetch('/api/mod/execute-security', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: actionType,
+              target_id: this.selectedUser.id,
+              target_username: this.selectedUser.username
+            })
+          });
+
+          const result = await response.json();
+
+          if (actionType === 'GENERATE_OTP' && result.otp) {
+            this.generatedOTP = result.otp;
+            this.showOTP = true;
+          } else {
+            alert(result.details || 'Comando ejecutado con éxito');
+            window.location.reload();
+          }
+        } finally {
+          this.loading = false;
+        }
+      }
+    }`}
+  >
+    <div x-show="showOTP" x-cloak class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-xl">
+      <div class="bg-[#0a0a0a] border border-white/10 p-1 rounded-[3rem] shadow-[0_0_100px_rgba(147,51,234,0.15)] max-w-md w-full mx-4">
+        <div class="bg-[#111] rounded-[2.8rem] p-10 text-center">
+          <div class="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-purple-500/20">
+            <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          
+          <h3 class="text-white font-black italic uppercase tracking-tighter text-2xl mb-2">{t('ops.otp.title')}</h3>
+          <p class="text-gray-500 text-[10px] uppercase tracking-widest mb-8">{t('ops.otp.subtitle')}</p>
+          
+          <div class="bg-black py-8 rounded-3xl mb-8 border border-white/5 group cursor-pointer relative" @click="navigator.clipboard.writeText(generatedOTP); alert('Copiado')">
+              <h2 class="text-6xl font-black text-white tracking-[0.2em] font-mono group-hover:text-purple-400 transition-colors" x-text="generatedOTP"></h2>
+              <span class="absolute bottom-2 right-4 text-[8px] text-gray-700 font-bold uppercase">{t('ops.otp.copy')}</span>
+          </div>
+      
+          <button @click="showOTP = false; window.location.reload()" class="w-full py-4 bg-white text-black text-[10px] font-black uppercase italic rounded-2xl hover:bg-purple-500 hover:text-white transition-all shadow-xl shadow-white/5">
+            {t('ops.otp.close')}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+      <div class="flex flex-col lg:flex-row justify-between items-center mb-16 gap-8 pb-12 border-b border-white/5">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter">{t('ops.title')} <span class="text-blue-600">{t('ops.highlight')}</span></h1>
+        </div>
+        
+        <div class="relative w-full md:w-[450px]">
+          <div class="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input 
+            type="text" 
+            x-model="query" 
+            @input="filterUsers" 
+            placeholder={t('ops.search_placeholder')}
+            class="w-full bg-[#0d0d0d] border border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-xs font-bold text-white outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-700"
+          />
+          
+          <div x-show="filteredUsers.length > 0" class="absolute w-full mt-3 bg-[#0d0d0d] border border-white/10 rounded-3xl z-50 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+            <template x-for="user in filteredUsers" :key="user.id">
+              <button @click="selectUser(user)" class="w-full p-5 hover:bg-blue-600 group text-left border-b border-white/5 transition-all">
+                <p class="text-white text-xs font-black uppercase italic group-hover:translate-x-1 transition-transform" x-text="user.full_name"></p>
+                <p class="text-gray-500 text-[10px] font-mono group-hover:text-blue-200" x-text="'@' + user.username"></p>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div class="gap-10">
+        <div class="lg:col-span-8 order-1 lg:order-2">
+          <template x-if="selectedUser">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-right-4 duration-500">
+              <div class="p-10 border-b border-white/5 bg-gradient-to-r from-white/[0.02] to-transparent flex justify-between items-center">
+                <div class="flex items-center gap-6">
+                  <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-900 rounded-[2rem] flex items-center justify-center text-3xl font-black italic shadow-2xl shadow-blue-500/20" x-text="selectedUser.username[0].toUpperCase()"></div>
+                  <div>
+                    <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter" x-text="selectedUser.full_name"></h2>
+                    <p class="text-blue-500 font-mono text-[10px] tracking-widest mt-1 flex items-center gap-2">
+                      <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                      ID: <span x-text="selectedUser.id"></span>
+                    </p>
+                  </div>
+                </div>
+                <button @click="selectedUser = null" class="p-4 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-2xl transition-all text-gray-600">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              <div class="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20">
+                
+                <button @click="executeAction('GENERATE_OTP')" :disabled="loading" class="group relative p-8 bg-[#0d0d0d] border border-white/5 rounded-[2.5rem] hover:border-purple-500/50 transition-all overflow-hidden">
+                  <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-600/5 blur-3xl group-hover:bg-purple-600/20 transition-all"></div>
+                  <div class="flex items-center gap-4 mb-4 text-purple-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    <span class="font-black text-[9px] uppercase tracking-[0.3em]">{t('ops.commands.otp.name')}</span>
+                  </div>
+                  <p class="text-white font-black text-xl italic uppercase group-hover:text-purple-400 transition-colors">{t('ops.commands.otp.name')}</p>
+                  <p class="text-gray-600 text-[10px] mt-2 leading-relaxed">{t('ops.commands.otp.desc')}</p>
+                </button>
+
+                <button @click="executeAction('PURGE_SESSIONS')" :disabled="loading" class="group relative p-8 bg-[#0d0d0d] border border-white/5 rounded-[2.5rem] hover:border-orange-500/50 transition-all overflow-hidden">
+                   <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-orange-600/5 blur-3xl group-hover:bg-orange-600/20 transition-all"></div>
+                   <div class="flex items-center gap-4 mb-4 text-orange-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    <span class="font-black text-[9px] uppercase tracking-[0.3em]">{t('ops.commands.purge.name')}</span>
+                  </div>
+                  <p class="text-white font-black text-xl italic uppercase group-hover:text-orange-400 transition-colors">{t('ops.commands.purge.name')}</p>
+                  <p class="text-gray-600 text-[10px] mt-2 leading-relaxed">{t('ops.commands.purge.desc')}</p>
+                </button>
+
+                <button @click="executeAction('FIX_STUCK_LESSON')" :disabled="loading" class="group relative p-8 bg-[#0d0d0d] border border-white/5 rounded-[2.5rem] hover:border-cyan-500/50 transition-all overflow-hidden">
+                  <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-cyan-600/5 blur-3xl group-hover:bg-cyan-600/20 transition-all"></div>
+                  <div class="flex items-center gap-4 mb-4 text-cyan-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                   <span class="font-black text-[9px] uppercase tracking-[0.3em]">{t('ops.commands.fix.name')}</span>
+                 </div>
+                 <p class="text-white font-black text-xl italic uppercase group-hover:text-cyan-400 transition-colors">{t('ops.commands.fix.name')}</p>
+                 <p class="text-gray-600 text-[10px] mt-2 leading-relaxed">{t('ops.commands.fix.desc')}</p>
+               </button>
+
+               <button @click="executeAction('SCAN_MULTI_ACCOUNT')" :disabled="loading" class="group relative p-8 bg-[#0d0d0d] border border-white/5 rounded-[2.5rem] hover:border-indigo-500/50 transition-all overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-600/5 blur-3xl group-hover:bg-cyan-600/20 transition-all"></div>
+                <div class="flex items-center gap-4 mb-4 text-indigo-500">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                 <span class="font-black text-[9px] uppercase tracking-[0.3em]">{t('ops.commands.scan.name')}</span>
+               </div>
+               <p class="text-white font-black text-xl italic uppercase group-hover:text-indigo-400 transition-colors">{t('ops.commands.scan.name')}</p>
+               <p class="text-gray-600 text-[10px] mt-2 leading-relaxed">{t('ops.commands.scan.desc')}</p>
+             </button>
+              </div>
+            </div>
+          </template>
+
+          <template x-if="!selectedUser">
+            <div class="h-full min-h-[500px] border-2 border-dashed border-white/5 rounded-[3rem] flex flex-col items-center justify-center text-center p-12">
+               <div class="w-24 h-24 bg-white/[0.02] rounded-full flex items-center justify-center mb-6">
+                <svg class="w-10 h-10 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+               </div>
+               <h3 class="text-gray-500 font-black uppercase italic tracking-widest text-sm">{t('ops.empty_state.title')}</h3>
+               <p class="text-gray-700 text-[10px] mt-2 max-w-xs font-bold uppercase tracking-tighter">{t('ops.empty_state.desc')}</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  [x-cloak] { display: none !important; }
+</style>

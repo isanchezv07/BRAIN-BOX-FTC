@@ -1,0 +1,66 @@
+---
+// @Isanchezv
+// src/pages/[locale]/resources.astro
+import Layout from "@/layouts/Layout.astro";
+
+const categories = [
+  {
+    title: "Documentación Oficial",
+    icon: "📚",
+    links: [
+      { name: "Game Manual", url: "https://ftc-resources.firstinspires.org/ftc/game/manual", desc: "Reglas generales y requisitos del robot." },
+      { name: "FTC Docs", url: "https://ftc-docs.firstinspires.org/en/latest/", desc: "La biblia técnica de FIRST para hardware y software." }
+    ]
+  },
+  {
+    title: "Programación (Java/Blocks)",
+    icon: "💻",
+    links: [
+      { name: "Wiki de OnBot Java", url: "https://ftc-docs.firstinspires.org/en/latest/programming_resources/onbot_java/OnBot-Java-Tutorial.html", desc: "Guía completa para programar sin Android Studio." },
+      { name: "Librería RoadRunner", url: "https://learnroadrunner.com/", desc: "Indispensable para trayectorias autónomas precisas." }
+    ]
+  },
+  {
+    title: "Diseño Mecánico (CAD)",
+    icon: "⚙️",
+    links: [
+      { name: "goBILDA", url: "https://www.gobilda.com/", desc: "Modelos STEP para todas las piezas del sistema." },
+      { name: "REV Robotics", url: "https://www.revrobotics.com/", desc: "Guías de ensamblaje para Control Hub y motores." },
+      { name: "Onshape para FTC", url: "https://www.onshape.com/en/education/first-robotics", desc: "Mejores prácticas para diseño colaborativo en la nube." }
+    ]
+  }
+];
+---
+
+<Layout title="Recursos">
+  <main class="min-h-screen bg-[#050505] text-white py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <header class="mb-16">
+        <h1 class="text-5xl font-bold mb-4">Recursos <span class="text-[#2ecc71]">FTC</span></h1>
+        <p class="text-gray-400 text-lg">Todo lo que necesitas para llevar a tu equipo al mundial.</p>
+      </header>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {categories.map(cat => (
+          <section class="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-[#2ecc71]/50 transition-colors">
+            <div class="text-3xl mb-4">{cat.icon}</div>
+            <h2 class="text-xl font-bold mb-6 text-gray-100">{cat.title}</h2>
+            <ul class="space-y-4">
+              {cat.links.map(link => (
+                <li>
+                  <a href={link.url} class="group block">
+                    <span class="text-[#2ecc71] font-medium group-hover:underline flex items-center gap-2">
+                      {link.name}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17L17 7"/></svg>
+                    </span>
+                    <p class="text-sm text-gray-500 mt-1">{link.desc}</p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  </main>
+</Layout>

@@ -1,0 +1,212 @@
+---
+// @Isanchezv
+// src/pages/[locale]/legal/terms.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { ui } from "@/i18n/ui";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const p = ui[lang].terms; 
+const documento = p.documento;
+const secciones = p.secciones;
+
+const lastUpdateLabel = lang === "es" ? "Última actualización" : "Last update";
+const backLabel = lang === "es" ? "Volver" : "Back";
+const noteLabel = lang === "es" ? "Nota:" : "Note:";
+---
+
+<Layout title={`${documento.titulo} | ${documento.entidad}`}>
+  <main class="min-h-screen bg-[#050505] text-white selection:bg-[#2ecc71]/30 pb-20">
+    
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute -top-[25%] -left-[10%] w-[50%] h-[50%] bg-[#2ecc71]/5 blur-[120px] rounded-full"></div>
+      <div class="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full"></div>
+    </div>
+
+    <article class="relative z-10 max-w-4xl mx-auto px-6 py-24">
+
+      <header class="mb-20 text-center">
+        <a
+          href={`/${lang}/`}
+          class="group inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#2ecc71] transition-colors duration-300 mb-12"
+        >
+          <span class="transform group-hover:-translate-x-1 transition-transform">←</span>
+          {backLabel}
+        </a>
+
+        <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
+          {documento.titulo}
+          <span class="block text-[#2ecc71] mt-2 italic font-serif font-light">{documento.entidad}</span>
+        </h1>
+
+        <div class="mt-8 flex items-center justify-center gap-3">
+          <div class="h-px w-8 bg-[#2ecc71]/30"></div>
+          <span class="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-medium">
+            {lastUpdateLabel}: {documento.ultima_actualizacion}
+          </span>
+          <div class="h-px w-8 bg-[#2ecc71]/30"></div>
+        </div>
+        
+        <div class="mt-12 text-gray-400 text-base md:text-lg max-w-3xl mx-auto leading-relaxed font-light text-left space-y-5">
+          {documento.preambulo.map((pItem) => (
+            <p>{pItem.texto}</p>
+          ))}
+        </div>
+      </header>
+
+      <div class="space-y-24">
+        {secciones.map((seccion) => (
+          <section class="group relative" id={`section-${seccion.id}`}>
+            <span class="absolute -left-8 md:-left-16 top-0 text-7xl md:text-8xl font-black text-white/[0.02] select-none pointer-events-none">
+              {seccion.id.padStart(2, "0")}
+            </span>
+
+            <div class="relative">
+              <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-white group-hover:text-[#2ecc71] transition-colors mb-6 flex items-center gap-3">
+                <span class="text-[#2ecc71]/50 text-xl">{seccion.id}.</span> {seccion.titulo}
+              </h2>
+
+              {seccion.contenido && (
+                <div class="space-y-4 mb-6 text-gray-300 leading-relaxed text-lg">
+                  {seccion.contenido.map((parrafo) => (
+                    <p>{parrafo}</p>
+                  ))}
+                </div>
+              )}
+
+              {seccion.lista && (
+                <ul class="space-y-3 mb-8 pl-2">
+                  {seccion.lista.map((item) => (
+                    <li class="flex items-start gap-3 text-gray-400">
+                      <span class="mt-2 w-1.5 h-1.5 rounded-full bg-[#2ecc71] shrink-0 shadow-[0_0_8px_rgba(46,204,113,0.5)]"></span>
+                      <span class="leading-relaxed">{item.texto}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {seccion.definiciones && (
+                <div class="grid md:grid-cols-2 gap-4 my-8">
+                  {seccion.definiciones.map((def) => (
+                    <div class="p-[1px] rounded-2xl bg-gradient-to-b from-white/10 to-transparent hover:from-[#2ecc71]/40 transition-all duration-500">
+                      <div class="h-full bg-[#0a0a0a] rounded-[15px] p-6">
+                        <h3 class="text-white font-bold mb-2 text-base flex items-center gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-[#2ecc71]"></span>
+                          {def.termino}
+                        </h3>
+                        <p class="text-sm text-gray-500 leading-relaxed font-light">
+                          {def.descripcion}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {seccion.subsecciones && (
+                <div class="space-y-12 mt-12 pl-0 md:pl-6 border-l-0 md:border-l border-white/10">
+                  {seccion.subsecciones.map((sub) => (
+                    <div class="relative">
+                      <h3 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <span class="text-[#2ecc71] text-sm font-mono">{sub.id}</span> {sub.titulo}
+                      </h3>
+                      
+                      {sub.contenido && (
+                        <div class="space-y-4 mb-4 text-gray-400 leading-relaxed">
+                          {sub.contenido.map((parrafo) => <p>{parrafo}</p>)}
+                        </div>
+                      )}
+
+                      {sub.lista && (
+                        <ul class="space-y-3 mb-6 pl-4">
+                          {sub.lista.map((item) => (
+                            <li class="flex items-start gap-3 text-gray-400">
+                              <span class="mt-2.5 w-1 h-1 rounded-full bg-gray-500 shrink-0"></span>
+                              <span class="leading-relaxed">{item.texto}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {sub.contenido_secundario && (
+                        <div class="space-y-4 my-4 text-gray-400 leading-relaxed">
+                          {sub.contenido_secundario.map((p) => <p>{p}</p>)}
+                        </div>
+                      )}
+                      {sub.lista_secundaria && (
+                        <ul class="space-y-3 mb-6 pl-4">
+                          {sub.lista_secundaria.map((item) => (
+                            <li class="flex items-start gap-3 text-gray-400">
+                              <span class="mt-2.5 w-1 h-1 rounded-full bg-gray-500 shrink-0"></span>
+                              <span class="leading-relaxed">{item.texto}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {sub.categorias_cookies && (
+                        <div class="grid md:grid-cols-3 gap-4 my-8">
+                          {sub.categorias_cookies.map((cat) => (
+                            <div class="bg-white/5 p-5 rounded-xl border border-white/10 hover:border-[#2ecc71]/30 transition-colors">
+                              <h4 class="text-[#2ecc71] font-medium mb-2">{cat.tipo}</h4>
+                              <p class="text-xs text-gray-400 mb-4">{cat.descripcion}</p>
+                              <ul class="space-y-2">
+                                {cat.lista.map((li) => (
+                                  <li class="text-sm text-gray-300 flex items-start gap-2">
+                                    <span class="text-[#2ecc71] opacity-50 select-none">›</span> {li.texto}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {sub.conclusion && (
+                        <div class="mt-6 p-5 rounded-xl bg-gradient-to-br from-[#2ecc71]/10 to-transparent border border-[#2ecc71]/10">
+                          {sub.conclusion.map((parrafo) => (
+                            <p class="text-sm text-[#2ecc71]/90 leading-relaxed mb-2 last:mb-0">
+                              <strong class="mr-2">💡 {noteLabel}</strong> {parrafo}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {seccion.conclusion && (
+                <div class="mt-8 p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10">
+                  {seccion.conclusion.map((parrafo) => (
+                    <p class="text-sm text-blue-300/90 leading-relaxed mb-2 last:mb-0">
+                      {parrafo}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+
+    </article>
+
+    <footer class="py-12 text-center border-t border-white/5 mt-20 relative z-10">
+       <p class="text-gray-600 text-xs tracking-widest uppercase">
+          © {new Date().getFullYear()} {documento.entidad} — All Rights Reserved
+       </p>
+    </footer>
+  </main>
+</Layout>
+
+<style>
+  article {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

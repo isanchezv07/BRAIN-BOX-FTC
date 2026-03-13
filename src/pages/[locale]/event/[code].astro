@@ -1,0 +1,318 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getFullTeamIntelligence } from "@/lib/ftc";
+
+const { code } = Astro.params;
+const teamNumberParam = Astro.url.searchParams.get('team');
+const season = Astro.url.searchParams.get('season') || "2025";
+
+const intel = await getFullTeamIntelligence(teamNumberParam);
+const seasonData = intel.history.find(s => s.season === season);
+
+// --------------------------------
+// 1. FILTRAR EVENTO
+// --------------------------------
+
+const rawMatches = seasonData?.matches.filter(m => {
+  const eventCode = m.eventCode || "";
+  return eventCode.toLowerCase().includes(code.toLowerCase()) || 
+         code.toLowerCase().includes(eventCode.toLowerCase());
+}) || [];
+
+// --------------------------------
+// 2. DE-DUPLICACIÓN
+// --------------------------------
+
+const uniqueMatchesMap = new Map();
+
+rawMatches.forEach(m => {
+
+  const matchKey = [
+    m.eventCode,
+    m.tournamentLevel,
+    m.series ?? "",
+    m.matchNumber
+  ].join("-");
+
+  if (!uniqueMatchesMap.has(matchKey)) {
+    uniqueMatchesMap.set(matchKey, m);
+  }
+
+});
+
+const uniqueMatches = Array.from(uniqueMatchesMap.values());
+
+// --------------------------------
+// 3. ORDEN
+// --------------------------------
+
+const getOrder = (lvl) => {
+  const l = (lvl || "").toLowerCase();
+  if (l.includes("practice")) return 1;
+  if (l.includes("qual")) return 2;
+  if (l.includes("playoff")) return 3;
+  return 4;
+};
+
+const sortedMatches = uniqueMatches.sort((a, b) => {
+
+  const valA = getOrder(a.tournamentLevel);
+  const valB = getOrder(b.tournamentLevel);
+
+  if (valA !== valB) return valA - valB;
+
+  return (a.matchNumber || 0) - (b.matchNumber || 0);
+
+});
+
+// --------------------------------
+// 4. FILTRO SOLO MATCHES DEL EQUIPO
+// --------------------------------
+
+const isTeamMatch = (m) =>
+  m.teams?.some(t => String(t.teamNumber) === String(teamNumberParam));
+
+const teamMatches = sortedMatches.filter(isTeamMatch);
+
+// --------------------------------
+// 5. SEGMENTACIÓN
+// --------------------------------
+
+const practiceMatches = teamMatches.filter(m => {
+  const level = (m.tournamentLevel || "").toLowerCase();
+  return level.includes("practice");
+});
+
+const qualMatches = teamMatches.filter(m => {
+  const level = (m.tournamentLevel || "").toLowerCase();
+  return level.includes("qual");
+});
+
+const playoffMatches = teamMatches.filter(m => {
+  const level = (m.tournamentLevel || "").toLowerCase();
+  return level.includes("playoff");
+});
+
+// --------------------------------
+// PLAYOFF BRACKETS
+// --------------------------------
+
+const playoffBrackets = {};
+
+playoffMatches.forEach(m => {
+
+  const series = m.series ?? 0;
+
+  if (!playoffBrackets[series]) {
+    playoffBrackets[series] = [];
+  }
+
+  playoffBrackets[series].push(m);
+
+});
+
+// ordenar matches dentro de cada serie
+Object.values(playoffBrackets).forEach((matches: any) => {
+  matches.sort((a, b) => (a.matchNumber ?? 0) - (b.matchNumber ?? 0));
+});
+
+// --------------------------------
+// 6. EFICIENCIA
+// --------------------------------
+
+const competitiveMatches = [...qualMatches, ...playoffMatches];
+
+const eventWins = competitiveMatches.filter(m => {
+
+  const teamInMatch = m.teams.find(
+    t => String(t.teamNumber) === String(teamNumberParam)
+  );
+
+  const isRed = teamInMatch?.station.includes("Red");
+
+  return isRed
+    ? m.scoreRedFinal > m.scoreBlueFinal
+    : m.scoreBlueFinal > m.scoreRedFinal;
+
+}).length;
+
+const efficiency =
+  competitiveMatches.length > 0
+    ? ((eventWins / competitiveMatches.length) * 100).toFixed(0)
+    : 0;
+
+// --------------------------------
+// 7. AWARDS
+// --------------------------------
+
+const eventAwards =
+  seasonData?.awards.filter(a =>
+    a.eventCode?.toLowerCase().includes(code.toLowerCase())
+  ) || [];
+
+// --------------------------------
+// 8. UI
+// --------------------------------
+
+const tabBtnBase =
+  "px-6 md:px-8 py-3 md:py-4 border border-white/5 rounded-2xl font-black italic text-[10px] md:text-[11px] transition-all whitespace-nowrap text-zinc-500 uppercase tracking-widest tab-btn cursor-pointer hover:bg-white/5";
+---
+
+<Layout title={`REGIONAL // ${code}`}>
+   <main class="bg-[#020202] text-white min-h-screen p-4 sm:p-10 md:p-20 font-sans relative overflow-x-hidden">
+    <div class="fixed inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none"></div>
+    
+    <nav class="mb-12 md:mb-20 relative z-10">
+      <a href="javascript:history.back()" class="group text-zinc-600 font-black uppercase text-[10px] tracking-widest hover:text-blue-500 transition-colors flex items-center gap-4">
+        <span class="w-8 md:w-10 h-px bg-zinc-800 group-hover:w-16 group-hover:bg-blue-500 transition-all"></span> 
+        Back_to_Intel
+      </a>
+    </nav>
+
+    <div class="max-w-7xl mx-auto relative z-10">
+      <header class="mb-16 md:mb-24">
+        <h1 class="text-5xl sm:text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-none text-center md:text-left">
+          Event <span class="text-transparent [-webkit-text-stroke:1px_white]">{code}</span>
+        </h1>
+        
+        <div class="flex flex-wrap justify-center md:justify-start gap-4 md:gap-10 mt-10 md:mt-12">
+           <div class="bg-white/5 px-6 py-4 rounded-2xl border border-white/10 text-center flex-1 md:flex-none min-w-[140px]">
+             <p class="text-[8px] md:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Target_Team</p>
+             <p class="text-2xl md:text-3xl font-black italic text-blue-500">#{teamNumberParam}</p>
+           </div>
+           <div class="bg-white/5 px-6 py-4 rounded-2xl border border-white/10 text-center flex-1 md:flex-none min-w-[140px] border-l-blue-600">
+             <p class="text-[8px] md:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Efficiency</p>
+             <p class="text-2xl md:text-3xl font-black italic text-white">{efficiency}%</p>
+           </div>
+           <div class="bg-white/5 px-6 py-4 rounded-2xl border border-white/10 text-center flex-1 md:flex-none min-w-[140px]">
+             <p class="text-[8px] md:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Matches</p>
+             <p class="text-2xl md:text-3xl font-black italic text-zinc-500">{sortedMatches.length}</p>
+           </div>
+        </div>
+      </header>
+
+      <div class="flex gap-2 md:gap-4 mb-8 md:mb-12 overflow-x-auto pb-4 no-scrollbar border-b border-white/5 sticky top-0 bg-[#020202]/90 backdrop-blur-md z-30">
+        <button class={tabBtnBase} data-target="playoffs">PLAYOFFS <span class="opacity-30">[{playoffMatches.length}]</span></button>
+        <button class={`${tabBtnBase} active`} data-target="quals">QUALIFICATION <span class="opacity-30">[{qualMatches.length}]</span></button>
+        <button class={tabBtnBase} data-target="practice">PRACTICE <span class="opacity-30">[{practiceMatches.length}]</span></button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
+        <div class="lg:col-span-4 order-2 lg:order-1">
+            <div class="bg-zinc-900/50 backdrop-blur-md border border-white/10 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] lg:sticky lg:top-32">
+              <h3 class="text-[10px] font-black uppercase text-blue-500 mb-6 md:mb-10 italic tracking-widest flex items-center gap-3">
+                <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span> Event_Awards
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                {eventAwards.length > 0 ? eventAwards.map(a => (
+                  <div class="bg-blue-600 text-black p-5 rounded-xl font-black italic uppercase text-[9px] md:text-[10px] flex items-center gap-4">
+                    <span class="text-lg">🏆</span> {a.name}
+                  </div>
+                )) : (
+                  <div class="border border-white/5 p-8 rounded-2xl text-center opacity-20 sm:col-span-2 lg:col-span-1">
+                    <p class="text-[9px] font-black uppercase italic">No_Awards_Found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+  
+          <div class="lg:col-span-8 order-1 lg:order-2">
+            {['quals', 'playoffs', 'practice'].map((id) => {
+              const data = id === 'quals' ? qualMatches : id === 'playoffs' ? playoffMatches : practiceMatches;
+              return (
+                <div id={id} class={`tab-content ${id === 'quals' ? 'block' : 'hidden'} space-y-6 animate-in`}>
+                  {data.map(m => {
+                    const teamInMatch = m.teams.find(t => String(t.teamNumber) === String(teamNumberParam));
+                    const isRed = teamInMatch?.station.includes('Red');
+                    const win = isRed ? m.scoreRedFinal > m.scoreBlueFinal : m.scoreBlueFinal > m.scoreRedFinal;
+                    const tie = m.scoreRedFinal === m.scoreBlueFinal;
+    
+                    return (
+                      <div class={`group p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border transition-all duration-500 ${win ? 'bg-blue-600/5 border-blue-500/20' : tie ? 'bg-white/5 border-white/10' : 'bg-red-600/5 border-red-500/10 opacity-80'}`}>
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8">
+                          <div class="text-center md:text-left">
+                            <span class="text-[8px] font-black text-blue-500/40 uppercase mb-1 block tracking-[0.4em]">#MATCH_{m.matchNumber}</span>
+                            <span class="text-[9px] md:text-[10px] font-bold text-zinc-600 uppercase mb-1 block tracking-widest">{m.description}</span>
+                            <p class={`text-3xl md:text-4xl font-black italic uppercase tracking-tighter ${win ? 'text-blue-500' : tie ? 'text-white' : 'text-red-600'}`}>
+                              {win ? 'SUCCESS' : tie ? 'DRAW' : 'FAILURE'}
+                            </p>
+                          </div>
+    
+                          <div class="flex items-center gap-4 md:gap-6 bg-black/60 p-5 md:p-6 rounded-2xl md:rounded-[2.5rem] border border-white/5 px-8 md:px-10">
+                            <div class="text-center">
+                              <span class={`text-3xl md:text-5xl font-mono font-black ${m.scoreRedFinal >= m.scoreBlueFinal ? 'text-white' : 'text-zinc-800'}`}>{m.scoreRedFinal}</span>
+                              <p class="text-[7px] font-bold text-red-500 mt-1 uppercase tracking-widest">Red</p>
+                            </div>
+                            <span class="text-zinc-900 font-black italic text-lg md:text-xl">VS</span>
+                            <div class="text-center">
+                              <span class={`text-3xl md:text-5xl font-mono font-black ${m.scoreBlueFinal >= m.scoreRedFinal ? 'text-white' : 'text-zinc-800'}`}>{m.scoreBlueFinal}</span>
+                              <p class="text-[7px] font-bold text-blue-500 mt-1 uppercase tracking-widest">Blue</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div class="space-y-2">
+                            <p class="text-[8px] font-black text-red-900/50 uppercase tracking-widest text-center sm:text-left">Red_Alliance</p>
+                            <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                              {m.teams.filter(t => t.station.includes('Red')).map(t => (
+                                <span class={`text-[9px] md:text-[10px] font-mono px-3 py-1 rounded-lg ${String(t.teamNumber) === String(teamNumberParam) ? 'bg-blue-500 text-black font-bold' : 'bg-white/5 text-zinc-500'}`}>
+                                  #{t.teamNumber}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div class="space-y-2">
+                            <p class="text-[8px] font-black text-blue-900/50 uppercase tracking-widest text-center sm:text-right">Blue_Alliance</p>
+                            <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+                              {m.teams.filter(t => t.station.includes('Blue')).map(t => (
+                                <span class={`text-[9px] md:text-[10px] font-mono px-3 py-1 rounded-lg ${String(t.teamNumber) === String(teamNumberParam) ? 'bg-blue-500 text-black font-bold' : 'bg-white/5 text-zinc-500'}`}>
+                                  #{t.teamNumber}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+      </div>
+    </div>
+  </main>
+</Layout> 
+
+<style>
+  .tab-btn.active {
+    border-color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    color: white !important;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .animate-in { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  const buttons = document.querySelectorAll('.tab-btn');
+  const contents = document.querySelectorAll('.tab-content');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.getAttribute('data-target');
+      contents.forEach(c => {
+        c.classList.toggle('hidden', c.id !== target);
+        c.classList.toggle('block', c.id === target);
+      });
+    });
+  });
+</script>

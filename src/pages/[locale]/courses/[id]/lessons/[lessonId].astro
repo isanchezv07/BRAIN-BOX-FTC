@@ -1,0 +1,381 @@
+---
+// @Isanchezv
+// src/pages/[locale]/courses/[id]/lessons/[lessonId].astro
+import Layout from "@/layouts/Layout.astro";
+import { marked } from 'marked';
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import QuizComponent from "@/components/QuizComponent.tsx";
+import SecurityGuard from "@/components/SecurityGuard.astro";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const { id: courseId, lessonId } = Astro.params;
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+let user = null;
+if (accessToken && refreshToken) {
+  const { data: { user: authUser } } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+  user = authUser;
+}
+
+const { data: course } = await supabase
+  .from("courses")
+  .select("id, title, team, has_certificate")
+  .eq("id", courseId)
+  .single();
+
+const providesCertificate = course?.has_certificate ?? false;
+
+const { data: lesson } = await supabase
+  .from("lessons")
+  .select("*")
+  .eq("id", lessonId)
+  .single();
+
+if (!lesson) {
+  return Astro.redirect(`/${lang}/dashboard`);
+}
+
+const { data: allLessons } = await supabase
+  .from("lessons")
+  .select("id, title, order_index")
+  .eq("course_id", courseId)
+  .order("order_index");
+
+const quizUrl = new URL(Astro.url.origin);
+quizUrl.pathname = `/${lang}/courses/${courseId}/lessons/data.json`;
+quizUrl.searchParams.set("lessonId", lessonId);
+quizUrl.searchParams.set("v", Date.now().toString());
+
+let quizData = null;
+try {
+  const quizResponse = await fetch(quizUrl.toString());
+  if (quizResponse.ok) {
+    quizData = await quizResponse.json();
+  }
+} catch (e) {
+  console.error("Error al cargar el quiz:", e);
+}
+
+const hasQuiz = quizData && quizData.questions && quizData.questions.length > 0;
+
+const currentIndex = allLessons?.findIndex(l => l.id === lesson.id) ?? 0;
+const nextLesson = allLessons && currentIndex !== -1 ? allLessons[currentIndex + 1] : null;
+const isLastLesson = currentIndex === (allLessons?.length || 0) - 1;
+
+let isThisLessonDone = false;
+let savedScore = 0;
+let courseAverage = 0;
+
+if (user) {
+  const { data: currentStatus } = await supabase
+    .from("lesson_progress")
+    .select("completed, quiz_score")
+    .eq("user_id", user.id)
+    .eq("lesson_id", lessonId)
+    .maybeSingle();
+    
+  isThisLessonDone = !!currentStatus?.completed;
+  savedScore = currentStatus?.quiz_score || 0;
+
+  const { data: allCourseProgress } = await supabase
+    .from("lesson_progress")
+    .select("quiz_score")
+    .eq("user_id", user.id)
+    .in("lesson_id", allLessons?.map(l => l.id) || [])
+    .gt("quiz_score", 0);
+
+  if (allCourseProgress && allCourseProgress.length > 0) {
+    const totalScore = allCourseProgress.reduce((sum, item) => sum + item.quiz_score, 0);
+    courseAverage = Math.round(totalScore / allCourseProgress.length);
+  }
+}
+
+const rawQuizT = t('quiz') || {};
+const quizT = {
+  status: { question: rawQuizT.status?.question || "Pregunta" },
+  description: { 
+    completed: rawQuizT.description?.completed || "Completado",
+    failed: rawQuizT.description?.failed || "Cuestionario requerido"
+  }
+};
+
+const contentHtml = (lesson.is_free || !!user) ? await marked.parse(lesson.content || "") : "";
+const shouldProtect = hasQuiz && !isThisLessonDone;
+
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const idToSave = lessonId; 
+    const score = parseInt(formData.get("quiz_score")?.toString() || "0", 10);
+
+    if (user && idToSave) {
+      const { error: upsertError } = await supabase
+        .from("lesson_progress")
+        .upsert({
+          user_id: user.id,
+          lesson_id: idToSave,
+          completed: true,
+          quiz_score: score,
+          completed_at: new Date().toISOString()
+        }, { 
+          onConflict: 'user_id,lesson_id' 
+        });
+
+      if (upsertError) {
+        return new Response(`Error: ${upsertError.message}`, { status: 500 });
+      }
+
+      let redirectPath = isLastLesson 
+        ? `/${lang}/courses/${courseId}/finish` 
+        : `/${lang}/courses/${courseId}/lessons/${nextLesson?.id}`;
+
+      return Astro.redirect(redirectPath);
+    }
+  } catch (e) {
+    console.error("ERROR CRÍTICO:", e);
+  }
+}
+---
+
+<Layout title={`${lesson.title} - ${course?.title}`}>
+  <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-yellow-500 z-[100] transition-all duration-300 w-0 shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>
+
+  {shouldProtect && <SecurityGuard t={t('security')} />}
+ 
+  <main class="min-h-screen bg-[#0a0a0a] text-gray-200 pb-40">
+
+    <div class="max-w-[750px] mx-auto pt-24 px-8 md:px-12">
+      <header class="mb-24 relative group">
+        <div class="absolute -left-12 md:-left-20 -top-16 text-[160px] md:text-[200px] font-black text-white/[0.04] select-none italic pointer-events-none leading-none">
+          {String(currentIndex + 1).padStart(2, '0')}
+        </div>
+        
+        <div class="relative z-10">
+          <span class="text-[10px] font-black text-yellow-500 uppercase italic tracking-[0.4em] mb-4 flex items-center gap-3">
+            <span class="h-[1px] w-6 bg-yellow-500/50"></span>
+            {t('course.step')} {currentIndex + 1} / {allLessons?.length}
+          </span>
+          
+          <h1 class="text-5xl md:text-8xl font-black text-white italic uppercase tracking-tighter leading-[0.85] mb-10 max-w-4xl">
+            {lesson.title}
+          </h1>
+
+          <div class="flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
+            <div class="h-[2px] w-24 bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]"></div>
+            
+            <a 
+              href={`/${lang}/courses/${courseId}`} 
+              class="group/back inline-flex items-center gap-3 text-[11px] font-black text-gray-500 hover:text-white transition-all tracking-[0.2em] italic uppercase"
+            >
+              <div class="p-2 rounded-full border border-white/5 group-hover/back:border-yellow-500/50 group-hover/back:bg-yellow-500/10 transition-all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="group-hover/back:-translate-x-1 transition-transform">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </div>
+              <span class="border-b border-transparent group-hover/back:border-yellow-500">
+                {t('lesson.buttons.back')}
+              </span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <article class="midu-content prose prose-invert max-w-none mb-32">
+        <Fragment set:html={contentHtml} />
+      </article>
+
+       {hasQuiz && (
+        <section class="mb-32 animate-in fade-in slide-in-from-bottom-10 duration-1000 border-t border-white/5 pt-20">
+            <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-yellow-500 mb-10 italic text-center">
+              {quizT.status.question}S
+            </h3>
+            <QuizComponent 
+              client:only="react"
+              quiz={quizData} 
+              lessonId={lessonId}
+              courseId={courseId}
+              isCompleted={isThisLessonDone}
+              initialScore={savedScore}
+              courseAverage={courseAverage}
+              timerEnabled={lesson.quiz_timer_enabled}
+              secondsPerQuestion={lesson.quiz_timer_seconds}
+              t={rawQuizT}
+            />
+        </section>
+      )}
+
+      <footer class="flex flex-col items-center justify-center border-t border-white/5 pt-16">
+        <div class="w-full max-w-md text-center">
+          {isThisLessonDone ? (
+            <div class="flex flex-col items-center gap-6">
+                <p class="text-green-500 font-black italic uppercase text-[9px] tracking-[0.3em] bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
+                    {quizT.description.completed}
+                </p>
+                <a href={isLastLesson ? `/${lang}/courses/${courseId}/finish` : `/${lang}/courses/${courseId}/lessons/${nextLesson?.id}`}
+                  class="w-full bg-white text-black px-12 py-5 rounded-2xl font-black uppercase italic text-xs hover:bg-yellow-500 transition-all text-center">
+                    {isLastLesson 
+                        ? (providesCertificate ? t('lesson.buttons.certificate') : "Finalizar Módulo") 
+                        : t('lesson.buttons.next_lesson')}
+                </a>
+            </div>
+          ) : (
+            <form method="POST" id="quiz-form">
+              <input type="hidden" name="target_lesson_id" value={lessonId} />
+              <input type="hidden" name="quiz_score" id="quiz-score-input" value="0" />
+              
+              <button 
+                type="submit"
+                id="celebrate-btn"
+                disabled={hasQuiz}
+                data-is-last-lesson={isLastLesson}
+                data-provides-certificate={providesCertificate}
+                data-next-lesson-text={t('lesson.buttons.next_lesson')}
+                data-certificate-text={t('lesson.buttons.certificate')}
+                class={`w-full px-12 py-6 rounded-2xl font-black uppercase italic text-lg transition-all duration-500 
+                ${hasQuiz ? 'opacity-50 pointer-events-none bg-zinc-900 text-zinc-600' : 'bg-yellow-500 text-black hover:bg-white hover:scale-[1.02]'}`}
+              >
+                <span id="btn-text">
+                  {hasQuiz 
+                    ? quizT.description.failed 
+                    : (isLastLesson 
+                        ? (providesCertificate ? t('lesson.buttons.certificate') : "Finalizar Módulo") 
+                        : t('lesson.buttons.next_lesson'))
+                  }
+                </span>
+              </button>
+            </form>
+          )}
+        </div>
+      </footer>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import confetti from 'canvas-confetti';
+
+  const setupUnlock = () => {
+    window.unlockLesson = (score: number) => {
+      const btn = document.getElementById('celebrate-btn');
+      const btnText = document.getElementById('btn-text');
+      const scoreInput = document.getElementById('quiz-score-input');
+
+      if (btn && btnText) {
+        btn.disabled = false;
+        btn.classList.remove('bg-zinc-900', 'text-zinc-600', 'opacity-50', 'pointer-events-none');
+        btn.classList.add('bg-yellow-500', 'text-black', 'animate-pulse-gold');
+        
+        if (scoreInput) {
+          (scoreInput as HTMLInputElement).value = score.toString();
+        }
+
+        const isLastLesson = btn.getAttribute('data-is-last-lesson') === 'true';
+        const providesCertificate = btn.getAttribute('data-provides-certificate') === 'true';
+        const nextLessonText = btn.getAttribute('data-next-lesson-text') || 'Siguiente Lección';
+        const certificateText = btn.getAttribute('data-certificate-text') || 'Certificado';
+        
+        if (isLastLesson) {
+          btnText.textContent = providesCertificate ? certificateText : "Finalizar Módulo";
+        } else {
+          btnText.textContent = nextLessonText;
+        }
+
+        confetti({ 
+          particleCount: 150, 
+          spread: 70, 
+          origin: { y: 0.8 },
+          colors: ['#fbbf24', '#ffffff']
+        });
+      }
+    };
+  };
+
+  document.addEventListener('astro:page-load', setupUnlock);
+  setupUnlock();
+</script>
+
+<style is:global>
+  .midu-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+    color: #a1a1aa;
+  }
+  
+  .midu-content p { margin-bottom: 1.5rem; }
+  
+  .midu-content h2 {
+    font-size: 1.6rem !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    font-style: italic;
+    margin-top: 4rem !important;
+    margin-bottom: 1.5rem !important;
+    display: flex;
+    align-items: center;
+  }
+  
+  .midu-content h2::before {
+    content: "";
+    width: 0.8rem;
+    height: 0.8rem;
+    background: #eab308;
+    margin-right: 1rem;
+    transform: rotate(45deg);
+  }
+  
+  .midu-content h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #f4f4f5;
+    margin-top: 2.5rem;
+    text-transform: uppercase;
+  }
+  
+  .midu-content ul {
+    margin-left: 1.5rem;
+    list-style-type: square;
+    margin-bottom: 2rem;
+  }
+
+  .midu-content li { margin-bottom: 0.5rem; }
+
+  .midu-content li::marker { color: #eab308; }
+
+  .midu-content a {
+    color: #eab308;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .midu-content pre {
+    background: #000;
+    border: 1px solid #27272a;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+
+  .midu-content code {
+    color: #fcd34d;
+    font-family: monospace;
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(234,179,8,0.2); }
+    50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(234,179,8,0.5); }
+  }
+  
+  .animate-pulse-gold {
+    animation: pulse-gold 2s infinite ease-in-out;
+  }
+</style>

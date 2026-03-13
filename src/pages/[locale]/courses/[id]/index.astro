@@ -1,0 +1,181 @@
+---
+// @Isanchezv
+// src/pages/[locale]/courses/[id]/index.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const { id, locale } = Astro.params;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+let user = null;
+let completedLessonsGlobal = new Set();
+
+if (accessToken && refreshToken) {
+  const { data: sessionData } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+  user = sessionData.session?.user;
+
+  if (user) {
+    const { data: progressRes } = await supabase
+      .from("lesson_progress")
+      .select("lesson_id, completed, quiz_score")
+      .eq("user_id", user.id);
+    
+    if (progressRes) {
+      completedLessonsGlobal = new Set(
+        progressRes
+          .filter(p => p.completed === true || (p.quiz_score !== null && p.quiz_score >= 70))
+          .map(p => p.lesson_id)
+      );
+    }
+  }
+}
+
+const { data: profile } = await supabase.from("profiles").select("*").eq("id", user?.id).single();
+
+const { data: course } = await supabase
+  .from("courses")
+  .select(`*, lessons(*)`)
+  .eq("id", id)
+  .single();
+
+let hasRoleAccess = true;
+if (course?.required_role && profile?.role !== 'admin') {
+  try {
+    const requiredRoles = typeof course.required_role === 'string' ? JSON.parse(course.required_role) : course.required_role;
+    hasRoleAccess = Array.isArray(requiredRoles) && requiredRoles.includes(profile?.role);
+  } catch {
+    hasRoleAccess = true;
+  }
+}
+
+if (!hasRoleAccess) {
+  return Astro.redirect(`/${lang}/dashboard`);
+}
+
+let hasAccess = !!user;
+const courseLessons = (course?.lessons || []).sort((a, b) => a.order_index - b.order_index);
+const totalLessons = courseLessons.length;
+const completedInThisCourse = courseLessons.filter(lesson => completedLessonsGlobal.has(lesson.id)).length;
+const progressPercentage = totalLessons > 0 ? (completedInThisCourse / totalLessons) * 100 : 0;
+---
+
+<Layout title={course?.title}>
+  
+  <main class="max-w-5xl mx-auto p-6 md:p-12">
+    <nav class="flex justify-between items-center mb-10">
+      <a href={`/${lang}/dashboard`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </div>
+        {t('course.nav.back')}
+      </a>
+    </nav>
+
+    <header class="mb-12 relative">
+      <h1 class="text-5xl md:text-8xl font-black text-white italic uppercase tracking-tighter leading-[0.85] mb-8">
+        {course?.title}
+      </h1>
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div class="max-w-2xl border-l-2 border-blue-500/50 pl-8">
+          <p class="text-gray-400 text-lg md:text-xl leading-relaxed italic font-medium">
+            {course?.description}
+          </p>
+        </div>
+    
+        {progressPercentage === 100 && (
+          <div class="shrink-0">
+            {course?.has_certificate ? (
+              <a 
+                href={`/${lang}/certificate/${id}`}
+                class="inline-flex flex-col items-center group"
+              >
+                <div class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                  {t('course.certificate.download')}
+                </div>
+                <span class="text-[8px] font-bold text-blue-400 mt-3 uppercase tracking-[0.3em] opacity-60 group-hover:opacity-100 transition-opacity">
+                  {t('course.certificate.unlocked')}
+                </span>
+              </a>
+            ) : (
+              <div class="flex flex-col items-center md:items-end">
+                <div class="px-8 py-4 bg-white/5 border border-white/10 text-green-500 rounded-2xl font-black uppercase italic text-xs tracking-widest backdrop-blur-sm">
+                  {t('course.status.completed')}
+                </div>
+                <span class="text-[8px] font-bold text-gray-600 mt-3 uppercase tracking-[0.3em] italic">
+                  Course_Finished // No_Cert
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <div class="mb-12">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">{t('course.nav.progress')}</span>
+            <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">{Math.round(progressPercentage)}%</span>
+        </div>
+        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <div 
+                class="h-full bg-blue-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+                style={`width: ${progressPercentage}%`}
+            ></div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+      {courseLessons.map((lesson, index) => {
+        const canView = hasAccess || lesson.is_free;
+        const isDone = completedLessonsGlobal.has(lesson.id);
+        
+        return (
+          <div class={`group flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-[2rem] border transition-all duration-500 
+            ${!canView ? 'border-white/5 bg-white/[0.02] opacity-60' : isDone ? 'border-green-500/20 bg-green-500/[0.02]' : 'border-white/10 bg-[#0a0a0a] hover:border-blue-500/40 hover:bg-[#0f0f0f]'}`}>
+            <div class="flex items-center gap-6 mb-4 md:mb-0">
+              <div class="w-10 h-10 flex items-center justify-center">
+                {!canView ? (
+                  <div class="text-gray-600">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </div>
+                ) : isDone ? (
+                    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                ) : (
+                    <span class="text-xs font-mono font-black text-gray-700 group-hover:text-blue-500 transition-colors">
+                        {String(index + 1).padStart(2, '0')}
+                    </span>
+                )}
+              </div>
+              <div>
+                <h3 class={`text-base font-black uppercase italic tracking-tight transition-colors ${!canView ? 'text-gray-600' : isDone ? 'text-gray-400' : 'text-white'}`}>
+                  {lesson.title}
+                </h3>
+              </div>
+            </div>
+
+            {canView ? (
+              <a href={`/${lang}/courses/${id}/lessons/${lesson.id}`} class={`w-full md:w-auto text-center text-[10px] font-black px-8 py-3 rounded-2xl transition-all uppercase italic ${isDone ? 'bg-white/5 text-gray-400 hover:bg-white hover:text-black hover:scale-105' : 'bg-white text-black hover:bg-blue-600 hover:text-white hover:scale-105 shadow-xl shadow-blue-500/10'}`}>
+                {isDone ? t('course.lessons.review') : t('course.lessons.start')}
+              </a>
+            ) : (
+              <span class="w-full md:w-auto text-center text-[10px] font-black px-6 py-3 rounded-2xl border border-white/10 text-gray-500 transition-all uppercase italic">
+                {t('course.lessons.locked')}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  </main>
+</Layout>

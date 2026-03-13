@@ -1,0 +1,559 @@
+---
+// @Isanchezv
+// src/layouts/Layout.astro
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import SpeedInsights from "@vercel/speed-insights/astro";
+import Analytics from "@vercel/analytics/astro";
+import LanguagePicker from "@/components/LanguagePicker.astro";
+import { supabase } from "@/lib/supabase";
+import UserMenu from "@/components/UserMenu.astro";
+import BaseHead from "@/components/BaseHead.astro";
+import "../styles/global.css";
+
+const { title = "BRAIN BOX FTC" } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const TARGET_DATE = "2026-02-25T18:00:00";
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+let user = null;
+let profile = null;
+let userEmail = "";
+let userName = "";
+
+if (accessToken && refreshToken) {
+  const { data: sessionData } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+
+  user = sessionData.session?.user;
+
+  if (user) {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    profile = profileData;
+    userEmail = user.email || "";
+    userName = profile?.full_name || profile?.username || "Estudiante";
+  }
+}
+---
+
+<html lang={lang}>
+  <head>
+    <BaseHead
+      title={title}
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+
+  <body
+    x-data={`{
+      mobileMenuOpen: false,
+      scrollY: 0,
+      isLocked: true,
+      target: new Date('${TARGET_DATE}').getTime(),
+      days: '00', hours: '00', minutes: '00', seconds: '00',
+      
+      init() {
+        this.tick();
+        setInterval(() => this.tick(), 1000);
+      },
+      tick() {
+        const now = new Date().getTime();
+        const diff = this.target - now;
+        if (diff <= 0) {
+          this.isLocked = false;
+          return;
+        }
+        this.days = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+        this.hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+        this.minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        this.seconds = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+      },
+      openMenu() {
+        this.scrollY = window.scrollY
+        document.body.style.position = 'fixed'
+        document.body.style.top = '-' + this.scrollY + 'px'
+        document.body.style.width = '100%'
+        this.mobileMenuOpen = true
+      },
+      closeMenu() {
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        window.scrollTo(0, this.scrollY)
+        this.mobileMenuOpen = false
+      }
+    }`}
+    class="bg-[#050505] text-gray-300 min-h-screen flex flex-col selection:bg-blue-500/30"
+    :class="isLocked ? 'lock-scroll' : ''"
+  >
+    <template x-if="isLocked">
+      <div 
+        class="timer-overlay"
+        x-transition:leave="fade-out"
+      >
+        <div class="timer-glow"></div>
+        <div class="timer-content">
+          <p class="timer-status">// SYSTEM_RELEASE_PENDING</p>
+          <div class="timer-grid">
+            <div class="timer-unit">
+              <span x-text="days"></span>
+              <label>DAYS</label>
+            </div>
+            <div class="timer-unit">
+              <span x-text="hours"></span>
+              <label>HRS</label>
+            </div>
+            <div class="timer-unit">
+              <span x-text="minutes"></span>
+              <label>MIN</label>
+            </div>
+            <div class="timer-unit timer-highlight">
+              <span x-text="seconds"></span>
+              <label>SEC</label>
+            </div>
+          </div>
+          <div class="timer-footer">
+            ESTIMATED ACCESS: {new Date(TARGET_DATE).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <SpeedInsights />
+    <Analytics />
+
+    <header
+      class="sticky top-0 z-100 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl"
+    >
+      <nav
+        class="max-w-7xl mx-auto flex justify-between items-center h-16 px-5 md:px-8"
+      >
+        <a
+          href={`/${lang}`}
+          class="text-xl font-black text-white italic uppercase tracking-tighter hover:text-blue-500 transition-colors"
+        >
+          🚀 Academy
+        </a>
+
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-8">
+            <LanguagePicker />
+
+            {user ? (
+              <UserMenu
+                profile={profile}
+                lang={lang}
+                email={user.email}
+              />
+            ) : (
+              <div class="flex items-center gap-6">
+                <a
+                  href={`/${lang}/signin`}
+                  class="text-[11px] font-bold text-gray-400 hover:text-white uppercase tracking-widest"
+                >
+                  {t("nav.login")}
+                </a>
+                <a
+                  href={`/${lang}/register`}
+                  class="text-[11px] font-black bg-white text-black px-6 py-2.5 rounded-full uppercase italic hover:bg-blue-600 hover:text-white transition-all"
+                >
+                  {t("nav.register")}
+                </a>
+              </div>
+            )}
+          </div>
+
+          <div class="flex md:hidden items-center gap-3">
+            {user && (
+              <UserMenu
+                profile={profile}
+                lang={lang}
+                email={user.email}
+              />
+            )}
+
+            {!user && (
+              <button
+                @click="mobileMenuOpen ? closeMenu() : openMenu()"
+                class="p-2 text-white"
+                aria-label="Toggle Menu"
+              >
+                <div class="w-6 h-5 flex flex-col justify-between items-end">
+                  <span
+                    :class="mobileMenuOpen
+                      ? 'rotate-45 translate-y-2 w-6'
+                      : 'w-6'"
+                    class="h-0.5 bg-current transition-all duration-300"
+                  ></span>
+                  <span
+                    :class="mobileMenuOpen ? 'opacity-0' : 'w-4'"
+                    class="h-0.5 bg-current transition-all duration-300"
+                  ></span>
+                  <span
+                    :class="mobileMenuOpen
+                      ? '-rotate-45 -translate-y-2.5 w-6'
+                      : 'w-5'"
+                    class="h-0.5 bg-current transition-all duration-300"
+                  ></span>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <div
+      x-show="mobileMenuOpen"
+      x-cloak
+      x-transition.opacity.duration.300ms
+      class="fixed inset-0 z-150 md:hidden"
+    >
+      <div
+        @click="closeMenu()"
+        x-show="mobileMenuOpen"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      ></div>
+
+      <div class="absolute inset-0 flex flex-col justify-end pointer-events-none">
+        <div
+          x-show="mobileMenuOpen"
+          x-transition:enter="transition ease-out duration-500 cubic-bezier(0.16,1,0.3,1)"
+          x-transition:enter-start="translate-y-full opacity-90"
+          x-transition:enter-end="translate-y-0 opacity-100"
+          x-transition:leave="transition ease-in duration-400 cubic-bezier(0.4,0,1,1)"
+          x-transition:leave-start="translate-y-0 opacity-100"
+          x-transition:leave-end="translate-y-full opacity-0"
+          class="pointer-events-auto w-full bg-[#0a0a0a] rounded-t-[3rem] p-8 pb-12 shadow-[0_-20px_80px_rgba(0,0,0,1)] border-t border-white/10"
+        >
+          <div
+            class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-full h-32 bg-blue-600/20 blur-[90px] pointer-events-none"
+          ></div>
+
+          <div class="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-10"></div>
+
+          <div class="flex flex-col gap-10 relative z-10">
+            <div class="flex flex-col items-center gap-4">
+              <p
+                class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em]"
+              >
+                {t("nav.config")}
+              </p>
+              <div
+                class="bg-white/5 p-2 rounded-2xl border border-white/5 scale-110"
+              >
+                <LanguagePicker />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <a
+                href={`/${lang}/signin`}
+                @click="closeMenu()"
+                class="py-5 text-sm font-bold text-gray-300 uppercase tracking-[0.2em] bg-white/5 border border-white/5 rounded-2xl text-center active:scale-95 transition"
+              >
+                {t("nav.login")}
+              </a>
+              <a
+                href={`/${lang}/register`}
+                @click="closeMenu()"
+                class="py-5 text-sm font-black bg-white text-black rounded-2xl uppercase italic tracking-wider text-center shadow-xl active:scale-95 transition"
+              >
+                {t("nav.register")}
+              </a>
+            </div>
+
+            <button
+              @click="closeMenu()"
+              class="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-bold"
+            >
+            {t("nav.close")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="flex-1 w-full overflow-x-hidden">
+      <slot />
+    </main>
+
+    <footer class="relative bg-[#070707] border-t border-white/5 pt-24 pb-10 px-6 overflow-hidden">
+  
+      <div class="absolute inset-x-0 -top-32 h-64 bg-linear-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 blur-3xl pointer-events-none" />
+    
+      <div class="relative max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+
+          <div class="sm:col-span-2 lg:col-span-1">
+            <span class="text-2xl font-black italic tracking-tighter mb-6 block 
+              bg-linear-to-r from-white via-blue-400 to-cyan-400 
+              bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(59,130,246,0.25)]">
+                BRAIN BOX FTC
+            </span>
+    
+            <p class="text-xs text-gray-500 leading-relaxed max-w-xs tracking-tight">
+              {t('footer.brandDescription')}
+            </p>
+          </div>
+    
+          <div>
+            <h4 class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-8 italic">
+              // {t('footer.academy.title')}
+            </h4>
+            <ul class="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-gray-600">
+              <li>
+                <a href={`/${lang}/explore`}  class="footer-link">
+                  {t("footer.academy.courses")}
+                </a>
+              </li>
+              <li>
+                <a href={`/${lang}/resources`}class="footer-link">
+                  {t("footer.academy.resources")}
+                </a>
+              </li>
+            </ul>
+          </div>
+    
+          <div>
+            <ul class="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-gray-600">
+              <li>
+                <a href={`/${lang}/docs`}class="footer-link">
+                  {t("footer.academy.docs")}
+                </a>
+              </li>
+              <li>
+                <a href={`/${lang}/legal/privacy`}class="footer-link">
+                  {t("footer.academy.privacy")}
+                </a>
+              </li>
+              <li>
+                <a href={`/${lang}/legal/terms`}class="footer-link">
+                  {t("footer.academy.terms")}
+                </a>
+              </li>
+              <li>
+                <a href="https://status-brain-box-ftc.vercel.app" class="footer-link">
+                  Status
+                </a>
+              </li>
+              <li>
+                <a href={`/${lang}/scout`} class="footer-link">
+                  Scout
+                </a>
+              </li>
+            </ul>
+          </div>
+    
+          <div class="flex flex-col items-start lg:items-end">
+            <div class="bg-white/2.5 border border-white/10 p-5 rounded-3xl w-full lg:w-auto backdrop-blur-md
+              shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+    
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse 
+                  shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
+                <span class="text-[9px] font-black uppercase tracking-widest text-white">
+                  {t('footer.system.status')}
+                </span>
+              </div>
+    
+              <div
+                x-data="{
+                  dateTime: '',
+                  init() {
+                    this.dateTime = new Date().toLocaleString();
+                    setInterval(() => {
+                      this.dateTime = new Date().toLocaleString();
+                    }, 1000);
+                  }
+                }"
+                class="text-[10px] font-mono text-gray-500"
+                x-text="dateTime"
+              />
+            </div>
+          </div>
+        </div>
+    
+        <div class="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-white/5 gap-6">
+          <p class="text-[10px] text-gray-700 font-black uppercase tracking-[0.4em] text-center md:text-left">
+            &copy; {new Date().getFullYear()} BRAIN BOX FTC
+            <span class="hidden sm:inline"> — All rights reserved</span>
+          </p>
+    
+          <div class="flex items-center gap-8 text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
+            <span class="text-blue-900/60 italic">Build_v2.0.27</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <style is:global>
+      [x-cloak] {
+        display: none !important;
+      }
+
+      html,
+      body {
+        overscroll-behavior: none;
+        touch-action: manipulation;
+      }
+
+      .lock-scroll {
+        overflow: hidden !important;
+        height: 100vh !important;
+      }
+
+      .timer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #050505;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        pointer-events: auto;
+      }
+
+      .timer-glow {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: rgba(59, 130, 246, 0.1);
+        filter: blur(100px);
+        border-radius: 9999px;
+        animation: pulse 4s infinite;
+      }
+
+      .timer-content {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .timer-status {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.6em;
+        color: #3b82f6;
+        font-style: italic;
+        margin-bottom: 3rem;
+      }
+
+      .timer-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+      }
+
+      .timer-unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .timer-unit span {
+        font-size: clamp(2rem, 8vw, 5rem);
+        font-weight: 900;
+        font-style: italic;
+        color: white;
+        letter-spacing: -0.05em;
+        line-height: 1;
+      }
+
+      .timer-unit label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #4b5563;
+        letter-spacing: 0.2em;
+        margin-top: 0.75rem;
+      }
+
+      .timer-highlight span {
+        color: #3b82f6;
+        text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+      }
+
+      .timer-footer {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px border rgba(255, 255, 255, 0.05);
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.2em;
+        color: #6b7280;
+        display: inline-block;
+      }
+
+      .fade-out {
+        transition: opacity 0.7s ease-in-out;
+        opacity: 0;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.1; }
+        50% { transform: scale(1.2); opacity: 0.2; }
+      }
+    </style>
+  </body>
+</html>
+
+<script>
+  import { supabase } from "@/lib/supabase";
+
+  async function forceSecurityCheck() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('status, ban_until')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profile && profile.status !== 'active') {
+      const now = new Date();
+      const banUntil = profile.ban_until ? new Date(profile.ban_until) : null;
+
+      if (!banUntil || new Date(banUntil) > now) {
+        await supabase.auth.signOut();
+        
+        document.cookie = "sb-access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "sb-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+
+        const lang = window.location.pathname.split('/')[1] || 'es';
+        window.location.href = `/${lang}/banned?reason=${encodeURIComponent("Acceso revocado por el administrador")}`;
+      }
+    }
+  }
+
+  forceSecurityCheck();
+  
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') forceSecurityCheck();
+  });
+</script>

@@ -1,0 +1,96 @@
+---
+// @Isanchezv
+// src/components/admin/StatsDashboard.astro
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+const { count: totalCourses } = await supabase.from('courses').select('*', { count: 'exact', head: true });
+const { count: completedLessons } = await supabase.from('lesson_progress').select('*', { count: 'exact', head: true }).eq('completed', true);
+
+const { data: userData } = await supabase.from('profiles').select('created_at');
+
+const months = Array.from({ length: 12 }, (_, i) => 
+  new Intl.DateTimeFormat(lang, { month: 'short' }).format(new Date(2026, i, 1))
+);
+
+const userCounts = new Array(12).fill(0);
+userData?.forEach(user => {
+  const month = new Date(user.created_at).getMonth();
+  userCounts[month]++;
+});
+
+const chartLabel = t('admin.stats.chartLabel');
+---
+
+<div class="space-y-8 p-6 bg-[#050505] rounded-[3rem] border border-white/5">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-blue-500/10 text-center">
+      <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">{t('admin.stats.users')}</p>
+      <h4 class="text-3xl font-black italic text-blue-500">{totalUsers}</h4>
+    </div>
+    <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-purple-500/10 text-center">
+      <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">{t('admin.stats.courses')}</p>
+      <h4 class="text-3xl font-black italic text-purple-500">{totalCourses}</h4>
+    </div>
+    <div class="bg-[#0a0a0a] p-6 rounded-[2rem] border border-green-500/10 text-center">
+      <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">{t('admin.stats.lessons')}</p>
+      <h4 class="text-3xl font-black italic text-green-500">{completedLessons}</h4>
+    </div>
+  </div>
+
+  <div class="bg-[#0a0a0a] p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
+    <div class="flex items-center justify-between mb-8">
+        <h3 class="text-xs font-black uppercase italic tracking-widest text-white/50">{t('admin.stats.growthTitle')}</h3>
+        <span class="text-[9px] bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full font-bold">{t('admin.stats.live')}</span>
+    </div>
+    <div class="h-[300px] w-full">
+      <canvas id="userChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script define:vars={{ userCounts, months, chartLabel }}>
+  const ctx = document.getElementById('userChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [{
+        label: chartLabel,
+        data: userCounts,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 4,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#666', font: { family: 'monospace', size: 10 } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#666', font: { family: 'monospace', size: 10 } }
+        }
+      }
+    }
+  });
+</script>
