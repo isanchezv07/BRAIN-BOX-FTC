@@ -3,6 +3,7 @@
 // src/layouts/Layout.astro
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import SpeedInsights from "@vercel/speed-insights/astro";
+import { ViewTransitions } from 'astro:transitions';
 import Analytics from "@vercel/analytics/astro";
 import LanguagePicker from "@/components/LanguagePicker.astro";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +52,7 @@ if (accessToken && refreshToken) {
     <BaseHead
       title={title}
     />
+    <ViewTransitions />
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
@@ -134,6 +136,26 @@ if (accessToken && refreshToken) {
 
     <SpeedInsights />
     <Analytics />
+
+  <div id="global-loader" class="fixed inset-0 z-[1000] flex items-center justify-center bg-[#050505] opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="flex flex-col items-center gap-4">
+      <div class="relative w-12 h-12">
+        <div class="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
+        <div class="absolute inset-0 border-t-2 border-blue-500 rounded-full animate-spin"></div>
+      </div>
+      <span class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic animate-pulse">
+        // LOADING_MODULE
+      </span>
+    </div>
+  </div>
+  
+  <style is:global>
+    /* Clase para mostrar el loader */
+    body.is-loading #global-loader {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
 
     <header
       class="sticky top-0 z-100 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl"
@@ -556,4 +578,14 @@ if (accessToken && refreshToken) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') forceSecurityCheck();
   });
+</script>
+
+<script>
+  const showLoader = () => document.body.classList.add('is-loading');
+  const hideLoader = () => document.body.classList.remove('is-loading');
+
+  document.addEventListener('astro:before-preparation', showLoader);
+  document.addEventListener('astro:page-load', hideLoader);
+
+  document.addEventListener('astro:after-preparation', hideLoader);
 </script>
