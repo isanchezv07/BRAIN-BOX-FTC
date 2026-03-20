@@ -3,306 +3,485 @@ import Layout from "@/layouts/Layout.astro";
 import { getFullTeamIntelligence } from "@/lib/ftc";
 
 const teamsParam = Astro.url.searchParams.get("teams") || "";
+const rivalsParam = Astro.url.searchParams.get("rivals") || "";
+
+// CORRECCIÓN AQUÍ: Usar las variables definidas arriba
 const teamNumbers = teamsParam.split(",").filter(Boolean);
+const rivalNumbers = rivalsParam.split(",").filter(Boolean);
 
-const teamsData = await Promise.all(
-  teamNumbers.map(team => getFullTeamIntelligence(team))
-);
+async function fetchAll(numbers) {
+  return await Promise.all(numbers.map(async (num) => {
+    const data = await getFullTeamIntelligence(num);
+    return {
+      profile: data.profile,
+      summary: data.summary || { peakScore: 0, winRate: "0%", totalAwards: 0, totalLosses: 0 }
+    };
+  }));
+}
 
-const rawTeamsJson = JSON.stringify(teamsData.map(team => ({
-  profile: team.profile,
-  summary: team.summary || {}
-})));
+const allianceData = await fetchAll(teamNumbers);
+const rivalData = await fetchAll(rivalNumbers);
+
+const rawTeamsJson = JSON.stringify(allianceData);
+const rawRivalsJson = JSON.stringify(rivalData);
 
 const metricConfig = [
-  { id: 'auto', label: 'Autónomo', color: 'bg-blue-600', text: 'text-blue-500' },
-  { id: 'teleop', label: 'TeleOp / Cycles', color: 'bg-green-600', text: 'text-green-500' },
-  { id: 'endgame', label: 'Endgame', color: 'bg-purple-600', text: 'text-purple-500' },
-  { id: 'defense', label: 'Defensa', color: 'bg-red-600', text: 'text-red-500' },
-  { id: 'consistency', label: 'Consistencia', color: 'bg-yellow-500', text: 'text-yellow-500' },
+  { id: 'auto', label: 'Autónomo', color: '#3b82f6', text: 'text-blue-500', desc: 'Basado en el 35% del Peak Score vs el Benchmark.' },
+  { id: 'teleop', label: 'TeleOp', color: '#22c55e', text: 'text-green-500', desc: 'Basado en el 65% del Peak Score vs el Benchmark.' },
+  { id: 'endgame', label: 'Premios', color: '#a855f7', text: 'text-purple-500', desc: 'Cantidad de premios obtenidos vs meta de temporada.' },
+  { id: 'consistency', label: 'Consistencia', color: '#eab308', text: 'text-yellow-500', desc: 'Win Rate ajustado por penalización de derrotas.' },
+  { id: 'defense', label: 'Resiliencia', color: '#ef4444', text: 'text-red-500', desc: 'Capacidad de mantener el score pese a las derrotas.' },
 ];
 ---
 
-<Layout title="ALLIANCE // BUILDER">
+<Layout title="WINNER PREDICTION">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" is:inline></script>
+  
   <main class="bg-black text-white min-h-screen p-4 sm:p-8 md:p-12 lg:p-20 font-sans relative overflow-x-hidden">
-    <div class="fixed inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] bg-size[20px_20px] pointer-events-none"></div>
+    <!-- Grid Background -->
+    <div class="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
 
     <header class="mb-12 md:mb-20 relative z-10">
       <div class="flex justify-between items-center mb-8">
-        <a href="javascript:history.back()" class="group text-zinc-600 font-black uppercase text-[10px] tracking-widest hover:text-blue-500 transition-colors flex items-center gap-4">
+        <a href="/" class="group text-zinc-500 font-black uppercase text-[10px] tracking-widest hover:text-blue-500 transition-colors flex items-center gap-4">
           <span class="w-8 md:w-10 h-px bg-zinc-800 group-hover:w-16 group-hover:bg-blue-500 transition-all"></span> 
           Back_to_Intel
         </a>
       </div>
 
-      <h1 class="text-[12vw] md:text-[9rem] font-black italic uppercase tracking-tighter leading-[0.8] mb-12">
-        Alliance<br/>
-        <span class="text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)]">Builder</span>
+      <h1 class="text-[12vw] md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.8] mb-12">
+        Winner <br/>
+        <span class="text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.2)]">Prediction</span>
       </h1>
 
-      <div class="max-w-2xl space-y-6">
-        <div class="flex flex-col sm:flex-row gap-3 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-sm w-full">
-          <input id="teamInput" type="number" placeholder="UNIT_NUMBER" class="bg-transparent border-none px-4 py-3 focus:ring-0 text-white font-mono flex-1 text-lg md:text-xl w-full" />
-          <button id="addBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-lg shadow-blue-600/20">Deploy_Unit</button>
+      <!-- Controles Superiores -->
+      <div class="max-w-5xl space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-blue-500/5 p-3 rounded-2xl border border-blue-500/20 flex gap-2 backdrop-blur-sm">
+            <input id="teamInput" type="number" placeholder="BLUE_ALLIANCE_ID" class="bg-transparent border-none px-4 py-3 focus:ring-0 text-white font-mono flex-1" />
+            <button id="addBtn" class="bg-blue-600 hover:bg-blue-400 text-black px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Add_Blue</button>
+          </div>
+          <div id="rivalInputContainer" class="hidden bg-red-500/5 p-3 rounded-2xl border border-red-500/20 flex gap-2 backdrop-blur-sm">
+            <input id="rivalInput" type="number" placeholder="RED_ALLIANCE_ID" class="bg-transparent border-none px-4 py-3 focus:ring-0 text-white font-mono flex-1" />
+            <button id="addRivalBtn" class="bg-red-600 hover:bg-red-400 text-black px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Add_Red</button>
+          </div>
         </div>
 
-        <button id="toggleCalibration" class="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-blue-400 transition-colors flex items-center gap-2 px-2 group">
-          <span class="w-4 h-px bg-zinc-800 group-hover:w-8 group-hover:bg-blue-400 transition-all"></span>
-          ⚙️ Calibrate_Global_Benchmarks
-        </button>
+        <div class="flex flex-wrap gap-6 items-center">
+            <button id="toggleCalibration" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white flex items-center gap-2 group">
+              <span class="w-4 h-4 rounded-full border border-zinc-700 flex items-center justify-center text-[8px] group-hover:border-blue-500">i</span>
+              Adjust_Benchmarks
+            </button>
+            <button id="enableBattle" class="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 hover:text-red-400 flex items-center gap-2">
+                ⚔️ Start_Engagement_Mode
+            </button>
+        </div>
 
-        <div id="calibrationPanel" class="hidden p-8 bg-zinc-900/60 border border-white/5 rounded-4xl backdrop-blur-3xl shadow-2xl transition-all">
-          <div class="mb-8 border-b border-white/5 pb-4">
-              <h3 class="text-xs font-black uppercase text-blue-500 italic tracking-[0.2em]">Data_Intelligence_Calibration</h3>
-              <p class="text-[9px] text-zinc-600 uppercase font-mono mt-1">// Ajusta el análisis de matches basándote en objetivos del torneo</p>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div class="space-y-4">
-              <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400 tracking-tighter">
-                Auto Score Target <span id="val-auto" class="text-blue-500 font-mono text-xs">100</span>
-              </label>
-              <input type="range" id="bench-auto" min="20" max="250" value="100" class="w-full accent-blue-600 bg-white/5 h-1 rounded-full appearance-none cursor-pointer">
+        <!-- Panel de Configuración y Leyenda -->
+        <div id="calibrationPanel" class="hidden p-8 bg-zinc-900/80 border border-white/10 rounded-3xl backdrop-blur-3xl">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
+            <div class="space-y-6">
+              <h4 class="text-blue-500 font-black text-xs uppercase tracking-widest">Target Benchmarks</h4>
+              <div class="space-y-1">
+                <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400">Auto Target <span id="val-auto" class="text-blue-500 font-mono">100</span></label>
+                <input type="range" id="bench-auto" min="20" max="250" value="100" class="w-full">
+              </div>
+              <div class="space-y-1">
+                <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400">TeleOp Target <span id="val-teleop" class="text-green-500 font-mono">250</span></label>
+                <input type="range" id="bench-teleop" min="0" max="500" value=100" class="w-full">
+              </div>
+              <div class="space-y-1">
+                <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400">Awards Target <span id="val-awards" class="text-purple-500 font-mono">10</span></label>
+                <input type="range" id="bench-awards" min="0" max="50" value="10" class="w-full">
+              </div>
+              <div class="space-y-1">
+                <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400">Consistency Target (WR%) <span id="val-wr" class="text-yellow-500 font-mono">80</span></label>
+                <input type="range" id="bench-wr" min="10" max="100" value="80" class="w-full">
+              </div>
             </div>
-
+            
             <div class="space-y-4">
-              <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400 tracking-tighter">
-                TeleOp Score Target <span id="val-teleop" class="text-green-500 font-mono text-xs">250</span>
-              </label>
-              <input type="range" id="bench-teleop" min="50" max="600" value="250" class="w-full accent-green-600 bg-white/5 h-1 rounded-full appearance-none cursor-pointer">
-            </div>
-
-            <div class="space-y-4">
-              <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400 tracking-tighter">
-                Awards Target <span id="val-awards" class="text-purple-500 font-mono text-xs">10</span>
-              </label>
-              <input type="range" id="bench-awards" min="1" max="30" value="10" class="w-full accent-purple-600 bg-white/5 h-1 rounded-full appearance-none cursor-pointer">
-            </div>
-
-            <div class="space-y-4">
-              <label class="flex justify-between text-[9px] font-bold uppercase text-zinc-400 tracking-tighter">
-                Consistency (WR) <span id="val-wr" class="text-yellow-500 font-mono text-xs">80%</span>
-              </label>
-              <input type="range" id="bench-wr" min="10" max="100" value="80" class="w-full accent-yellow-600 bg-white/5 h-1 rounded-full appearance-none cursor-pointer">
+              <h4 class="text-zinc-500 font-black text-xs uppercase tracking-widest italic">// Metric_Logic</h4>
+              <div class="grid gap-3">
+                {metricConfig.map(m => (
+                  <div class="flex gap-4 items-start">
+                    <div class={`w-1 h-8 ${m.text} bg-current`}></div>
+                    <div>
+                      <p class="text-[10px] font-bold uppercase leading-none mb-1">{m.label}</p>
+                      <p class="text-[9px] text-zinc-500 leading-tight">{m.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
     </header>
 
-    {teamsData.length > 0 ? (
-      <>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 mb-24 relative z-10" id="teamGrid"></div>
-
-        <section class="border-t-2 border-white/10 pt-20 relative z-10">
-          <div class="flex flex-col xl:flex-row gap-12 items-start xl:items-end">
-            <div class="w-full">
-              <h2 class="text-5xl font-black italic uppercase tracking-tighter mb-12">Synergy_Analysis</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4" id="synergyContainer"></div>
+    <!-- Arena de Unidades -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-24 relative z-10">
+        <div id="teamGrid" class="space-y-4"></div>
+        <div id="rivalGrid" class="space-y-4"></div>
+    </div>
+    { (allianceData.length > 0 || rivalData.length > 0) && (
+      <section class="border-t border-white/5 pt-12 md:pt-20 relative z-10 space-y-12 md:space-y-20">
+        
+        <!-- Comparativa de Sinergia -->
+        <div class="space-y-8">
+            <div class="flex items-end gap-4 mb-8">
+                <h2 class="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Collective_Power</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-zinc-800 to-transparent mb-2 md:mb-4"></div>
             </div>
+    
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-12 relative">
+                <!-- Badge de Versus Flotante (Solo visible en pantallas grandes) -->
+                <div class="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black border border-white/10 rounded-full items-center justify-center">
+                    <span class="text-[10px] font-black italic text-zinc-500">VS</span>
+                </div>
+    
+                <!-- Alianza Azul -->
+                <div class="bg-blue-500/[0.03] backdrop-blur-md p-6 md:p-8 rounded-[2rem] border border-blue-500/10 hover:border-blue-500/30 transition-colors">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <p class="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Blue_Synergy_Core</p>
+                    </div>
+                    <!-- Grid responsive: 2 cols en móvil, 3 en tablet, 5 en desktop -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="blueSynergy"></div>
+                </div>
+    
+                <!-- Alianza Roja -->
+                <div class="bg-red-500/[0.03] backdrop-blur-md p-6 md:p-8 rounded-[2rem] border border-red-500/10 hover:border-red-500/30 transition-colors">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <p class="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Red_Synergy_Core</p>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="redSynergy"></div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Prediction Box -->
+        <div id="predictionBox" class="w-full bg-zinc-900 border border-white/10 p-1.5 rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl transition-all duration-700">
+          <div class="bg-blue-600 p-8 md:p-16 lg:p-20 rounded-[2.2rem] md:rounded-[3.8rem] flex flex-col lg:flex-row justify-between items-center gap-10 text-black transition-colors duration-700">
+            
+            <!-- Texto de Predicción -->
+            <div class="text-center lg:text-left flex-1 min-w-0 space-y-4 md:space-y-6">
+              <div class="space-y-1">
+                  <!-- Badge superior más compacto -->
+                  <p class="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-black/40 flex items-center justify-center lg:justify-start gap-2">
+                      <span class="w-2 h-[1px] bg-black/20"></span>
+                      Neural_Network_Output
+                  </p>
+                  
+                  <!-- Título con Clamp para escalado fluido y sin encimarse -->
+                  <h3 id="predictionTitle" class="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black italic uppercase tracking-tighter leading-none break-words">
+                      Match_Ready
+                  </h3>
+              </div>
 
-            <div class="w-full xl:w-[480px] bg-blue-600 p-10 rounded-[3rem] text-black shadow-2xl transition-all duration-500" id="predictionBox">
-              <div class="flex justify-between items-center mb-8 border-b border-black/10 pb-4">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] opacity-70 italic">Predictive_Result</h3>
-                <span class="text-[9px] font-mono font-bold px-2 py-1 bg-black/10 rounded animate-pulse">LIVE_CALC</span>
+              <!-- Subtítulo con max-width controlado y mejor espaciado -->
+              <div class="max-w-sm mx-auto lg:mx-0">
+                  <p id="predictionSub" class="text-[9px] md:text-[11px] font-bold uppercase tracking-[0.15em] opacity-70 leading-relaxed italic border-l-2 border-black/30 pl-4 py-1">
+                      Analizando variables de campo y consistencia de los drivers...
+                  </p>
               </div>
-              <div class="grid grid-cols-2 gap-8">
-                <div>
-                  <p class="text-[10px] font-black uppercase italic tracking-widest mb-1">Efficiency</p>
-                  <p id="totalScore" class="text-7xl font-black italic leading-none tracking-tighter">0</p>
+            </div>
+    
+            <!-- Probabilidades -->
+            <div class="flex flex-col sm:flex-row items-center gap-6 md:gap-8 bg-black p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl w-full lg:w-auto">
+                <div class="text-center flex-1 sm:flex-none">
+                    <p class="text-[8px] md:text-[9px] font-black uppercase mb-1 text-zinc-500 tracking-widest">Blue_Win</p>
+                    <p id="blueProb" class="text-6xl md:text-7xl font-black italic tracking-tighter text-blue-500">50%</p>
                 </div>
-                <div>
-                  <p class="text-[10px] font-black uppercase italic tracking-widest mb-1">Win_Prob</p>
-                  <p id="totalProb" class="text-7xl font-black italic leading-none tracking-tighter">0%</p>
+                
+                <!-- Divisor: Horizontal en móvil, Vertical en Desktop -->
+                <div class="h-px w-12 sm:h-16 sm:w-px bg-zinc-800"></div>
+                
+                <div class="text-center flex-1 sm:flex-none">
+                    <p class="text-[8px] md:text-[9px] font-black uppercase mb-1 text-zinc-500 tracking-widest">Red_Win</p>
+                    <p id="redProb" class="text-6xl md:text-7xl font-black italic tracking-tighter text-red-500">50%</p>
                 </div>
-              </div>
             </div>
           </div>
-        </section>
-      </>
-    ) : (
-      <div class="text-center py-40 border-4 border-dashed border-white/5 rounded-[4rem] opacity-30">
-        <p class="text-zinc-600 font-black text-3xl italic uppercase tracking-tighter leading-relaxed text-center">System Idle<br/>Waiting for Team Data</p>
-      </div>
+        </div>
+      </section>
     )}
   </main>
 </Layout>
 
-<script is:inline define:vars={{ rawTeamsJson, metricConfig }}>
-  const rawData = JSON.parse(rawTeamsJson);
-  
-  // Benchmarks Iniciales
-  let benchmarks = { 
-    auto: 100,
-    teleop: 250,
-    awards: 10, 
-    wr: 80 
-  };
-  
-  let currentTeamMetrics = [];
+<script is:inline define:vars={{ rawTeamsJson, rawRivalsJson, metricConfig }}>
+  const allianceData = JSON.parse(rawTeamsJson);
+  const rivalData = JSON.parse(rawRivalsJson);
+  let benchmarks = { auto: 100, teleop: 250, awards: 10, wr: 80 };
 
-  // Lógica de Inicialización: Cruza datos de matches con Benchmarks
-  function initMetrics() {
-    currentTeamMetrics = rawData.map(team => {
-      // Análisis inteligente basado en el historial (summary)
-      // Se estima una distribución de puntos si la API no desglosa periodos
-      const peak = team.summary.peakScore || 0;
-      const estimatedAuto = peak * 0.35; 
-      const estimatedTeleop = peak * 0.65;
-
-      return {
-        teamNumber: team.profile.teamNumber,
-        name: team.profile.nameShort,
-        vals: {
-          auto: Math.min(100, Math.round((estimatedAuto / benchmarks.auto) * 100)),
-          teleop: Math.min(100, Math.round((estimatedTeleop / benchmarks.teleop) * 100)),
-          endgame: Math.min(100, Math.round(((team.summary.totalAwards || 0) / benchmarks.awards) * 100)),
-          defense: Math.max(10, 100 - (team.summary.totalLosses || 0) * 5),
-          consistency: Math.min(100, Math.round(((parseFloat(team.summary.winRate) || 0) / benchmarks.wr) * 100))
-        }
-      };
-    });
+  /**
+   * CÁLCULO DE MÉTRICAS:
+   * 1. Auto/TeleOp: Se dividen según el ratio ideal (35/65) y se comparan contra el Benchmark definido.
+   * 2. Endgame (Premios): Relación entre total de premios y la meta de temporada.
+   * 3. Defensa (Resiliencia): Se degrada según el número de derrotas (8% por derrota).
+   * 4. Consistencia: Win Rate base menos una penalización por derrotas acumuladas.
+   */
+  function getMetrics(team) {
+    const peak = team.summary.peakScore || 0;
+    const losses = team.summary.totalLosses || 0;
+    const penalty = Math.min(25, losses * 2.5);
+    
+    return {
+      auto: Math.min(100, Math.round(((peak * 0.35) / benchmarks.auto) * 100)),
+      teleop: Math.min(100, Math.round(((peak * 0.65) / benchmarks.teleop) * 100)),
+      endgame: Math.min(100, Math.round(((team.summary.totalAwards || 0) / benchmarks.awards) * 100)),
+      defense: Math.max(10, 100 - (losses * 8)),
+      consistency: Math.max(5, Math.min(100, Math.round(((parseFloat(team.summary.winRate) || 0) / benchmarks.wr) * 100) - penalty))
+    };
   }
 
-  function render() {
-    const grid = document.getElementById('teamGrid');
-    if (!grid) return;
+  function renderSynergyGrid(targetId, dataArr) {
+    const container = document.getElementById(targetId);
+    if (!container) return { power: 0 };
+    
+    if (!dataArr.length) {
+        container.innerHTML = `<div class="col-span-full py-4 text-zinc-700 font-black italic uppercase text-[10px] tracking-[0.3em]">No_Data_Available</div>`;
+        return { power: 0 };
+    }
 
-    grid.innerHTML = currentTeamMetrics.map(team => `
-      <div class="team-card bg-zinc-900/40 border border-white/10 p-8 rounded-[2rem] backdrop-blur-md hover:border-white/20 transition-all group">
-        <div class="flex justify-between items-start mb-8">
+    const sums = dataArr.reduce((acc, t) => {
+        const m = getMetrics(t);
+        Object.keys(m).forEach(k => acc[k] = (acc[k] || 0) + m[k]);
+        return acc;
+    }, {});
+
+    const avgs = {};
+    Object.keys(sums).forEach(k => avgs[k] = Math.round(sums[k] / dataArr.length));
+
+    container.innerHTML = metricConfig.map(m => `
+        <div class="bg-black/40 border border-white/5 p-4 rounded-xl relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-1 h-full ${m.text} opacity-20"></div>
+            <p class="text-[7px] font-black text-zinc-500 uppercase tracking-widest mb-1 italic">${m.label}</p>
+            <p class="text-3xl font-black italic leading-none ${m.text}">${avgs[m.id] || 0}%</p>
+        </div>
+    `).join('');
+
+    // Power Score: Promedio ponderado multiplicado por el factor de consistencia
+    return { power: (avgs.auto * 0.35 + avgs.teleop * 0.45 + avgs.endgame * 0.2) * (avgs.consistency / 100) };
+  }
+
+  function updateBattleStats() {
+    const blue = renderSynergyGrid('blueSynergy', allianceData);
+    const red = renderSynergyGrid('redSynergy', rivalData);
+    
+    const total = (blue.power + red.power) || 1;
+    const blueProb = Math.round((blue.power / total) * 100);
+    const redProb = 100 - blueProb;
+
+    document.getElementById('blueProb').innerText = `${blueProb}%`;
+    document.getElementById('redProb').innerText = `${redProb}%`;
+
+    const boxContainer = document.querySelector('#predictionBox > div');
+    const sub = document.getElementById('predictionSub');
+    const title = document.getElementById('predictionTitle');
+    
+    // Definimos los estados para evitar repetir clases gigantes
+    const baseClasses = "p-8 md:p-16 lg:p-20 rounded-[2.2rem] md:rounded-[3.8rem] flex flex-col lg:flex-row justify-between items-center gap-10 text-black transition-all duration-700 ease-in-out";
+
+    if (blueProb >= 52) {
+        boxContainer.className = `${baseClasses} bg-blue-600 shadow-[0_0_50px_-12px_rgba(37,99,235,0.5)]`;
+        title.innerText = "BLUE_WINS";
+        sub.innerText = "LA ALIANZA AZUL POSEE UNA VENTAJA TÁCTICA SUPERIOR EN CONSISTENCIA Y AUTO-SCORE.";
+    } else if (blueProb <= 48) {
+        boxContainer.className = `${baseClasses} bg-red-600 shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)]`;
+        title.innerText = "RED_WINS";
+        sub.innerText = "ALERTA: LA ALIANZA ROJA SUPERA LOS BENCHMARKS DE RENDIMIENTO EN TELEOP.";
+    } else {
+        boxContainer.className = `${baseClasses} bg-yellow-500 shadow-[0_0_50px_-12px_rgba(234,179,8,0.5)]`;
+        title.innerText = "NEURAL_OVERLAP";
+        sub.innerText = "ESTADÍSTICAMENTE INDISTINGUIBLES. EL RESULTADO DEPENDERÁ DE LAS PENALIZACIONES EN CAMPO.";
+    }
+  }
+
+  function createCard(team, isBlue) {
+    const metrics = getMetrics(team);
+    
+    // Mapeo de clases para asegurar que Tailwind las genere
+    const theme = isBlue 
+      ? { 
+          border: 'hover:border-blue-500/30', 
+          text: 'group-hover:text-blue-500',
+          accent: 'blue' 
+        } 
+      : { 
+          border: 'hover:border-red-500/30', 
+          text: 'group-hover:text-red-500',
+          accent: 'red' 
+        };
+    
+    return `
+      <div class="bg-zinc-900/40 border border-white/5 p-6 rounded-[2rem] backdrop-blur-md ${theme.border} transition-all group">
+        <div class="flex justify-between items-start mb-6">
           <div>
-            <h2 class="text-3xl font-black italic uppercase leading-none tracking-tighter truncate w-48">${team.name}</h2>
-            <p class="text-zinc-500 font-black text-xl italic tracking-tighter mt-1">#${team.teamNumber}</p>
+            <h2 class="text-2xl font-black italic uppercase leading-none tracking-tighter ${theme.text} transition-colors">
+                ${team.profile.nameShort}
+            </h2>
+            <p class="text-zinc-600 font-mono text-sm tracking-widest mt-1">#${team.profile.teamNumber}</p>
           </div>
-          <button onclick="window.removeTeam(${team.teamNumber})" class="bg-red-500/10 text-red-500/50 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          <button onclick="window.removeUnit('${isBlue ? 'teams' : 'rivals'}', ${team.profile.teamNumber})" class="bg-white/5 hover:bg-red-500 text-zinc-500 hover:text-white p-2 rounded-lg transition-all">
+             <svg 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="3" 
+              stroke-linecap="round" 
+              stroke-linejoin="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
           </button>
         </div>
-        <div class="space-y-6">
-          ${metricConfig.map(m => `
-            <div class="group/metric">
-              <div class="flex justify-between items-center text-[10px] font-black uppercase mb-2 text-zinc-500 italic tracking-widest">
-                <span>${m.label}</span>
-                <div class="flex items-center gap-0.5 opacity-40 group-hover/metric:opacity-100 transition-opacity">
-                  <input 
-                    type="number" 
-                    value="${team.vals[m.id]}" 
-                    oninput="window.updateMetric(${team.teamNumber}, '${m.id}', this.value)"
-                    class="bg-transparent border-none p-0 w-8 text-right focus:ring-0 font-black text-blue-500 cursor-pointer appearance-none"
-                  />
-                  <span class="text-[8px] text-zinc-600">%</span>
-                </div>
-              </div>
-              <div class="h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                <div id="bar-${team.teamNumber}-${m.id}" class="h-full ${m.color} transition-all duration-700" style="width: ${team.vals[m.id]}%"></div>
-              </div>
+        
+        <div class="grid grid-cols-5 gap-4 items-center">
+            <div class="col-span-3 space-y-3">
+                ${metricConfig.map(m => `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[7px] font-black uppercase text-zinc-500 tracking-tighter">
+                          <span>${m.label}</span>
+                          <span class="${m.text}">${metrics[m.id]}%</span>
+                        </div>
+                        <div class="h-[2px] w-full bg-white/5 rounded-full">
+                            <div class="h-full transition-all duration-1000" style="width: ${metrics[m.id]}%; background: ${m.color}"></div>
+                        </div>
+                    </div>
+                `).join('')}
             </div>
-          `).join('')}
+            <div class="col-span-2 aspect-square p-2">
+                <canvas id="chart-${team.profile.teamNumber}"></canvas>
+            </div>
         </div>
       </div>
-    `).join('');
-    calculateSynergy();
+    `;
   }
 
-  function calculateSynergy() {
-    const alliance = { auto: 0, teleop: 0, endgame: 0, defense: 0, consistency: 0 };
-    const count = currentTeamMetrics.length;
-    if (count === 0) return;
-
-    currentTeamMetrics.forEach(t => {
-      Object.keys(t.vals).forEach(k => alliance[k] += t.vals[k]);
+  function initChart(team, color) {
+    const ctx = document.getElementById(`chart-${team.profile.teamNumber}`);
+    if (!ctx) return;
+    const metrics = getMetrics(team);
+    
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: metricConfig.map(m => m.label),
+        datasets: [{
+          data: Object.values(metrics),
+          backgroundColor: `${color}20`,
+          borderColor: color,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointBackgroundColor: color
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            angleLines: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { display: false },
+            pointLabels: { display: false }
+          }
+        },
+        plugins: { legend: { display: false }, tooltip: { enabled: true } }
+      }
     });
-
-    const synergyContainer = document.getElementById('synergyContainer');
-    synergyContainer.innerHTML = metricConfig.map(m => {
-      const avg = Math.round(alliance[m.id] / count);
-      alliance[m.id] = avg; 
-      return `
-        <div class="bg-white/5 border border-white/10 p-6 rounded-2xl">
-          <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1.5 italic">${m.label}</p>
-          <p class="text-4xl font-black italic leading-none ${m.text}">${avg}</p>
-        </div>
-      `;
-    }).join('');
-
-    const score = Math.round(alliance.auto * 0.3 + alliance.teleop * 0.3 + alliance.endgame * 0.2 + alliance.defense * 0.1 + alliance.consistency * 0.1);
-    document.getElementById('totalScore').innerText = score;
-    document.getElementById('totalProb').innerText = `${Math.min(98, Math.round(score * 0.95))}%`;
-
-    const box = document.getElementById('predictionBox');
-    if (score > 65) box.style.backgroundColor = '#2563eb';
-    else if (score > 40) box.style.backgroundColor = '#eab308';
-    else box.style.backgroundColor = '#dc2626';
   }
 
-  // Window Actions
-  window.updateMetric = (teamNum, metricId, newVal) => {
-    const team = currentTeamMetrics.find(t => t.teamNumber == teamNum);
-    if (team) {
-      team.vals[metricId] = Math.min(100, Math.max(0, parseInt(newVal) || 0));
-      calculateSynergy();
-      const bar = document.getElementById(`bar-${teamNum}-${metricId}`);
-      if (bar) bar.style.width = `${team.vals[metricId]}%`;
-    }
-  };
+  // --- Sistema de Renderizado ---
+  function render() {
+    const bGrid = document.getElementById('teamGrid');
+    const rGrid = document.getElementById('rivalGrid');
+    
+    // 1. Limpiar grids para evitar duplicados visuales
+    if (bGrid) bGrid.innerHTML = allianceData.map(t => createCard(t, true)).join('');
+    if (rGrid) rGrid.innerHTML = rivalData.map(t => createCard(t, false)).join('');
+    
+    // 2. Reinicializar Charts (Chart.js necesita el nodo en el DOM)
+    allianceData.forEach(t => initChart(t, '#3b82f6'));
+    rivalData.forEach(t => initChart(t, '#ef4444'));
+    
+    // 3. Recalcular predicción global
+    updateBattleStats();
+  }
 
-  window.removeTeam = (num) => {
+  // --- Eventos de Benchmarks (CORRECCIÓN AQUÍ) ---
+  // Añadimos 'awards' y 'wr' al array para que escuchen cambios
+  ['auto', 'teleop', 'awards', 'wr'].forEach(key => {
+    const slider = document.getElementById(`bench-${key}`);
+    const display = document.getElementById(`val-${key}`);
+    
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        benchmarks[key] = value;
+        
+        // Actualizar el texto indicador si existe
+        if (display) {
+            display.innerText = value + (key === 'wr' ? '%' : '');
+        }
+        
+        // Renderizar todo con los nuevos valores de benchmark
+        render();
+      });
+    }
+  });
+
+  // Eventos de Input
+  document.getElementById('addBtn').onclick = () => add('teams', 'teamInput');
+  document.getElementById('addRivalBtn').onclick = () => add('rivals', 'rivalInput');
+  
+  function add(param, inputId) {
+    const val = document.getElementById(inputId).value.trim();
+    if (!val) return;
     const url = new URL(window.location);
-    const teams = url.searchParams.get("teams").split(",").filter(t => t != num);
-    if (teams.length > 0) url.searchParams.set("teams", teams.join(","));
-    else url.searchParams.delete("teams");
+    const current = url.searchParams.get(param) ? url.searchParams.get(param).split(",") : [];
+    if (!current.includes(val)) {
+      current.push(val);
+      url.searchParams.set(param, current.join(","));
+      window.location.href = url.href;
+    }
+  }
+
+  window.removeUnit = (param, num) => {
+    const url = new URL(window.location);
+    const list = url.searchParams.get(param).split(",").filter(t => t != num);
+    list.length ? url.searchParams.set(param, list.join(",")) : url.searchParams.delete(param);
     window.location.href = url.href;
   };
 
-  // UI Listeners
-  document.getElementById('toggleCalibration').onclick = () => {
-    const panel = document.getElementById('calibrationPanel');
-    panel.classList.toggle('hidden');
-  };
+  document.getElementById('enableBattle').onclick = () => document.getElementById('rivalInputContainer').classList.toggle('hidden');
+  document.getElementById('toggleCalibration').onclick = () => document.getElementById('calibrationPanel').classList.toggle('hidden');
 
-  const sliderMap = [
-    ['auto', 'bench-auto', 'val-auto'],
-    ['teleop', 'bench-teleop', 'val-teleop'],
-    ['awards', 'bench-awards', 'val-awards'],
-    ['wr', 'bench-wr', 'val-wr', '%']
-  ];
-
-  sliderMap.forEach(([key, inputId, labelId, unit]) => {
-    const input = document.getElementById(inputId);
-    input?.addEventListener('input', (e) => {
+  ['auto', 'teleop'].forEach(key => {
+    document.getElementById(`bench-${key}`).addEventListener('input', (e) => {
       benchmarks[key] = parseInt(e.target.value);
-      document.getElementById(labelId).innerText = e.target.value + (unit || '');
-      initMetrics();
+      document.getElementById(`val-${key}`).innerText = e.target.value;
       render();
     });
   });
 
-  document.getElementById('addBtn').onclick = () => {
-    const val = document.getElementById('teamInput').value.trim();
-    if (!val) return;
-    const url = new URL(window.location);
-    const teams = url.searchParams.get("teams") ? url.searchParams.get("teams").split(",") : [];
-    if (!teams.includes(val)) {
-      teams.push(val);
-      url.searchParams.set("teams", teams.join(","));
-      window.location.href = url.href;
-    }
-  };
-
-  initMetrics();
+  if (new URL(window.location).searchParams.get('rivals')) document.getElementById('rivalInputContainer').classList.remove('hidden');
   render();
 </script>
 
 <style>
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number] { -moz-appearance: textfield; outline: none; }
-  
-  input[type=range] { -webkit-appearance: none; background: transparent; }
-  input[type=range]::-webkit-slider-thumb {
-    appearance: none; width: 14px; height: 14px; background: white; border-radius: 50%; cursor: pointer; border: 2px solid #3b82f6; margin-top: -6px;
+  input[type=range] { -webkit-appearance: none; background: transparent; height: 20px; }
+  input[type=range]::-webkit-slider-thumb { 
+    appearance: none; width: 12px; height: 12px; background: #fff; 
+    border-radius: 2px; cursor: pointer; border: none; margin-top: -5px;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
   }
-  input[type=range]::-webkit-slider-runnable-track {
-    width: 100%; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;
+  input[type=range]::-webkit-slider-runnable-track { 
+    width: 100%; height: 2px; background: rgba(255,255,255,0.05); 
   }
 </style>
