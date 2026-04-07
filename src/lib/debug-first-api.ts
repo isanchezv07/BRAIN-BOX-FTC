@@ -1,6 +1,8 @@
+// @Isanchezv
+// src/lib/debug-first-api.ts
 import { getFullTeamIntelligence } from "./ftc.js";
 
-const TEAM = "16818";
+const TEAM = "00000";
 
 function normalizeLevel(level: string) {
   const l = String(level || "").toLowerCase();

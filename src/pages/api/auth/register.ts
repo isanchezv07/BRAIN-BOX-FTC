@@ -34,5 +34,5 @@ export const POST: APIRoute = async ({ request, redirect, url }) => {
     return new Response(error.message, { status: 500 });
   }
 
-  return redirect(`/${lang}/verify-email`);
+  return redirect(`/${lang}/auth/verify-email`);
 };

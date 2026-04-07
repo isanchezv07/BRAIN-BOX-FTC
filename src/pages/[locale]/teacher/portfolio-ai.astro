@@ -18,24 +18,57 @@ const { data: profile } = await supabase
 
 const isAdmin = profile?.role === 'admin';
 const usageCount = profile?.scanner_usage_count || 0;
-const limit = 5; 
+const limit = 3; 
 const isLocked = !isAdmin && usageCount >= limit;
 const remaining = isAdmin ? "∞" : Math.max(0, limit - usageCount);
+
+const tourData = {
+  nextBtnText: t('tour.btns.next'),
+  prevBtnText: t('tour.btns.prev'),
+  doneBtnText: t('tour.btns.done'),
+  steps: [
+    { 
+      element: '#tour-step-1', 
+      title: t('tour.step1.title'), 
+      desc: t('tour.step1.desc') 
+    },
+    { 
+      element: '#tour-step-2', 
+      title: t('tour.step2.title'), 
+      desc: t('tour.step2.desc') 
+    },
+    { 
+      element: '#tour-step-3', 
+      title: t('tour.step3.title'), 
+      desc: t('tour.step3.desc') 
+    },
+    { 
+      element: '#tour-step-4', 
+      title: t('tour.step4.title'), 
+      desc: t('tour.step4.desc') 
+    }
+  ]
+};
 ---
 
 <Layout title={t('scanner.title')}>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 
+  <div id="tour-config" data-translations={JSON.stringify(tourData)}></div>
+
   <main class="min-h-screen bg-[#050505] py-20 px-6 relative overflow-hidden">
 
     <nav class="flex items-left mb-10 ml-0 md:ml-80">
-      <a href={`/${lang}/dashboard`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+      <a href={`/${lang}/account/dashboard`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
         <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </div>
         {t('course.nav.back')}
       </a>
     </nav>
+    <button id="replay-tour-btn" class="fixed bottom-8 right-8 z-[9999] hidden items-center gap-3 text-[10px] font-black text-white hover:text-white transition-all uppercase tracking-[0.2em] group bg-blue-500/50 backdrop-blur-md border border-white/5 px-4 py-3 rounded-full hover:border-blue-500/50 hover:bg-blue-500/10 shadow-2xl">
+      {t('tour.btns.replay') || '¿Repetir Tour?'}
+    </button>
 
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-blue-500/10 blur-[120px] pointer-events-none"></div>
 
@@ -45,14 +78,13 @@ const remaining = isAdmin ? "∞" : Math.max(0, limit - usageCount);
           <h1 class="text-6xl md:text-7xl font-black italic text-white uppercase leading-none">
             {t('scanner.title')} <span class="text-blue-500">{t('scanner.highlight')}</span>
           </h1>
-        
           <span class="px-4 py-1 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400 text-[11px] font-black uppercase tracking-[0.3em] italic shadow-[0_0_15px_rgba(168,85,247,0.15)]">
             Beta
           </span>
         </div>
 
         <div id="tour-step-2" class="bg-white/5 p-4 rounded-2xl border border-white/5 w-full md:w-auto">
-            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Créditos de IA</p>
+            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{t('scanner.credits')}</p>
             <div class="flex gap-1.5 justify-start md:justify-end">
                 {isAdmin ? (
                     <div class="h-4 flex items-center gap-1">
@@ -70,7 +102,7 @@ const remaining = isAdmin ? "∞" : Math.max(0, limit - usageCount);
 
       <div id="tour-step-3" class="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
         <label for="awardSelector" class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 block ml-4 italic">
-          Configuración de Objetivo (Específico por Premio)
+          {t('scanner.objective')}
         </label>
         <div class="relative group">
           <select id="awardSelector" class="w-full bg-white/5 border border-white/10 text-white font-black italic uppercase text-sm rounded-2xl px-6 py-4 appearance-none focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer hover:bg-white/[0.08]">
@@ -214,192 +246,162 @@ const remaining = isAdmin ? "∞" : Math.max(0, limit - usageCount);
   // @ts-nocheck
   import { driver } from "driver.js";
 
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('fileInput');
-  const resultsArea = document.getElementById('results-area');
-  const idleState = document.getElementById('idle-state');
-  const loadingState = document.getElementById('loading-state');
-  const awardSelector = document.getElementById('awardSelector');
+  function initTour() {
+    const replayBtn = document.getElementById('replay-tour-btn');
+    const configElement = document.getElementById('tour-config');
+    
+    if (!configElement || !replayBtn) return;
 
-  // --- CONFIGURACIÓN DEL TOUR ---
-  const driverConfig = driver({
-    showProgress: true,
-    animate: true,
-    overlayColor: '#000',
-    overlayOpacity: 0.9,
-    nextBtnText: 'Siguiente',
-    prevBtnText: 'Anterior',
-    doneBtnText: 'Listo',
-    steps: [
-      { 
-        element: '#tour-step-1', 
-        popover: { 
-          title: 'Fase Beta Active', 
-          description: 'Esta herramienta está en fase beta y puede presentar errores. Los resultados no son oficiales; considéralo una guía estratégica.',
-          side: "bottom", align: 'start' 
-        } 
-      },
-      { 
-        element: '#tour-step-2', 
-        popover: { 
-          title: 'Créditos Limitados', 
-          description: 'Tienes un número limitado de intentos. Úsalos con responsabilidad y asegúrate de subir el archivo correcto cada vez.',
-          side: "bottom", align: 'end' 
-        } 
-      },
-      { 
-        element: '#tour-step-3', 
-        popover: { 
-          title: 'Categoría de Análisis', 
-          description: 'Antes de subir tu PDF, selecciona obligatoriamente qué premio quieres evaluar para aplicar la rúbrica correcta.',
-          side: "top", align: 'center' 
-        } 
-      },
-      { 
-        element: '#tour-step-4', 
-        popover: { 
-          title: 'Subida de PDF', 
-          description: 'Sube tu portafolio aquí. Asegúrate de que el archivo sea un PDF y que pese menos de 5MB.',
-          side: "top", align: 'center' 
-        } 
-      }
-    ]
-  });
+    const tourTranslations = JSON.parse(configElement.dataset.translations);
 
-  // Ejecutar tour una sola vez
-  if (!localStorage.getItem('portfolio_tour_completed')) {
-    driverConfig.drive();
-    localStorage.setItem('portfolio_tour_completed', 'true');
-  }
-
-  const isLocked = dropzone?.getAttribute('data-locked') === "true";
-
-  if (!isLocked && dropzone) {
-    dropzone.addEventListener('click', () => fileInput?.click());
-
-    fileInput?.addEventListener('change', (e) => { 
-        if (e.target.files?.length) handleFileUpload(e.target.files[0]); 
-    });
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
-    });
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropzone.addEventListener(eventName, () => {
-            dropzone.classList.add('border-blue-500', 'bg-blue-500/10', 'scale-[1.01]');
-        }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, () => {
-            dropzone.classList.remove('border-blue-500', 'bg-blue-500/10', 'scale-[1.01]');
-        }, false);
-    });
-
-    dropzone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const file = dt.files[0];
-        if (file && file.type === "application/pdf") {
-            handleFileUpload(file);
-        } else {
-            alert("Error: Por favor sube un archivo PDF válido.");
+    const driverConfig = driver({
+      showProgress: true,
+      animate: true,
+      overlayColor: '#000',
+      overlayOpacity: 0.9,
+      nextBtnText: tourTranslations.nextBtnText,
+      prevBtnText: tourTranslations.prevBtnText,
+      doneBtnText: tourTranslations.doneBtnText,
+      steps: tourTranslations.steps.map(step => ({
+        element: step.element,
+        popover: {
+          title: step.title,
+          description: step.desc,
+          side: "bottom",
+          align: "start"
         }
-    }, false);
-  }
+      })),
+      onDestroyed: () => {
+        localStorage.setItem('tour_realizado', 'true');
+        replayBtn.style.display = 'flex';
+      }
+    });
 
-  function handleFileUpload(file) {
-    // Validación de peso (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("El archivo excede los 5MB permitidos. Por favor reduce el tamaño de tu PDF.");
-      return;
+    const yaLoVio = localStorage.getItem('tour_realizado');
+    if (!yaLoVio) {
+      driverConfig.drive();
+    } else {
+      replayBtn.style.display = 'flex';
     }
 
-    if (!file) return;
-    idleState.classList.add('hidden');
-    loadingState.classList.remove('hidden');
-    resultsArea.classList.add('hidden');
-
-    const formData = new FormData();
-    formData.append('portfolio', file);
-    formData.append('awardType', awardSelector.value); 
-
-    uploadAndAnalyze(formData);
+    replayBtn.onclick = () => driverConfig.drive();
   }
 
-  async function uploadAndAnalyze(formData) {
-    try {
-      const response = await fetch('/api/analyze-portfolio', { method: 'POST', body: formData });
+  function initScannerLogic() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const resultsArea = document.getElementById('results-area');
+    const idleState = document.getElementById('idle-state');
+    const loadingState = document.getElementById('loading-state');
+    const awardSelector = document.getElementById('awardSelector');
+
+    if (!dropzone) return;
+
+    const isLocked = dropzone.getAttribute('data-locked') === "true";
+
+    if (!isLocked) {
+      dropzone.onclick = () => fileInput?.click();
+
+      fileInput?.addEventListener('change', (e) => { 
+          if (e.target.files?.length) handleFileUpload(e.target.files[0]); 
+      });
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+          }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+          const file = e.dataTransfer.files[0];
+          if (file?.type === "application/pdf") handleFileUpload(file);
+          else alert("Error: Por favor sube un archivo PDF válido.");
+      });
+    }
+
+    async function handleFileUpload(file) {
+      if (file.size > 5 * 1024 * 1024) return alert("Máximo 5MB permitido.");
       
-      if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.message || "Error en el servidor");
-      }
-      
-      const data = await response.json();
+      idleState.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+      resultsArea.classList.add('hidden');
 
-      loadingState.classList.add('hidden');
-      resultsArea.classList.remove('hidden');
-      
-      document.getElementById('score').innerText = data.score;
-      document.getElementById('verdict').innerText = data.verdict;
-      document.getElementById('compliance-pages').innerText = data.portfolio_compliance.page_limit;
-      document.getElementById('compliance-coverage').innerText = data.portfolio_compliance.content_coverage;
-      document.getElementById('compliance-evidence').innerText = data.portfolio_compliance.evidence_quality;
-      document.getElementById('analysis').innerText = data.analysis;
-      document.getElementById('award-gap').innerText = data.unified_gap || data.gap || "N/A";
+      const formData = new FormData();
+      formData.append('portfolio', file);
+      formData.append('awardType', awardSelector.value); 
 
-      const renderList = (id, items) => {
-        const el = document.getElementById(id);
-        if (el && items) el.innerHTML = items.map(i => `
-          <li class="flex items-start gap-2 italic border-b border-white/5 pb-2 text-[10px] uppercase tracking-tighter">
-            <span class="text-blue-500 font-black">•</span> ${i}
-          </li>`).join('');
-      };
+      try {
+        const res = await fetch('/api/analyze-portfolio', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error("Error en el servidor");
+        const data = await res.json();
 
-      renderList('critical-list', [...(data.critical_missing || []), ...(data.rule_violations || [])]);
-      renderList('strengths-list', data.strengths);
-      renderList('actions-list', data.next_actions);
+        loadingState.classList.add('hidden');
+        resultsArea.classList.remove('hidden');
+        
+        document.getElementById('score').innerText = data.score;
+        document.getElementById('verdict').innerText = data.verdict;
+        document.getElementById('compliance-pages').innerText = data.portfolio_compliance.page_limit;
+        document.getElementById('compliance-coverage').innerText = data.portfolio_compliance.content_coverage;
+        document.getElementById('compliance-evidence').innerText = data.portfolio_compliance.evidence_quality;
+        document.getElementById('analysis').innerText = data.analysis;
+        document.getElementById('award-gap').innerText = data.unified_gap || data.gap || "N/A";
 
-      // Render Suggestions & Questions logic (se asume data estructura del servidor)
-      const containerS = document.getElementById('suggestions-container');
-      if (containerS && data.suggestions) {
-          let html = '';
-          Object.entries(data.suggestions).forEach(([key, items]) => {
-              if (Array.isArray(items)) items.forEach(item => {
-                  html += `<div class="bg-white/5 border border-white/10 p-6 rounded-3xl mb-4"><p class="text-white font-bold italic mb-2">${item.issue}</p><p class="text-blue-400 text-xs italic">${item.suggested_portfolio_change}</p></div>`;
-              });
-          });
-          containerS.innerHTML = html;
-      }
+        const renderList = (id, items) => {
+          const el = document.getElementById(id);
+          if (el && items) el.innerHTML = items.map(i => `
+            <li class="flex items-start gap-2 italic border-b border-white/5 pb-2 text-[10px] uppercase tracking-tighter">
+              <span class="text-blue-500 font-black">•</span> ${i}
+            </li>`).join('');
+        };
 
-      const containerQ = document.getElementById('questions-container');
-      if (containerQ && data.judge_questions) {
-          let html = '';
-          Object.entries(data.judge_questions).forEach(([key, items]) => {
-              if (Array.isArray(items)) items.forEach(item => {
-                  html += `<div class="bg-white/5 border border-white/10 p-6 rounded-3xl mb-4"><p class="text-white font-black italic">"${item.question}"</p></div>`;
-              });
-          });
-          containerQ.innerHTML = html;
-      }
+        renderList('critical-list', [...(data.critical_missing || []), ...(data.rule_violations || [])]);
+        renderList('strengths-list', data.strengths);
+        renderList('actions-list', data.next_actions);
 
-      setTimeout(() => resultsArea.scrollIntoView({ behavior: 'smooth' }), 300);
+        const containerS = document.getElementById('suggestions-container');
+        if (containerS && data.suggestions) {
+            let html = '';
+            Object.entries(data.suggestions).forEach(([key, items]) => {
+                if (Array.isArray(items)) items.forEach(item => {
+                    html += `<div class="bg-white/5 border border-white/10 p-6 rounded-3xl mb-4"><p class="text-white font-bold italic mb-2">${item.issue}</p><p class="text-blue-400 text-xs italic">${item.suggested_portfolio_change}</p></div>`;
+                });
+            });
+            containerS.innerHTML = html;
+        }
 
-    } catch (e) { 
+        const containerQ = document.getElementById('questions-container');
+        if (containerQ && data.judge_questions) {
+            let html = '';
+            Object.entries(data.judge_questions).forEach(([key, items]) => {
+                if (Array.isArray(items)) items.forEach(item => {
+                    html += `<div class="bg-white/5 border border-white/10 p-6 rounded-3xl mb-4"><p class="text-white font-black italic">"${item.question}"</p></div>`;
+                });
+            });
+            containerQ.innerHTML = html;
+        }
+
+        setTimeout(() => resultsArea.scrollIntoView({ behavior: 'smooth' }), 300);
+
+      } catch (e) {
         console.error(e);
         idleState.classList.remove('hidden');
         loadingState.classList.add('hidden');
-        alert("Error crítico: " + e.message); 
+        alert("Error al analizar el archivo.");
+      }
     }
   }
+
+  function run() {
+    initTour();
+    initScannerLogic();
+  }
+
+  run();
+  document.addEventListener('astro:page-load', run);
 </script>
 
 <style is:global>
-  /* Estilo Driver.js Premium Morado */
   .driver-popover {
     background-color: #0a0a0a !important;
     color: white !important;

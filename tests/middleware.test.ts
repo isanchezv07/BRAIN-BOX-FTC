@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-// Simulamos la lógica que debería estar en tu middleware
 import { onRequest } from '../src/middleware'; 
 
 describe('🔐 Seguridad: RBAC (Control de Acceso)', () => {
@@ -10,8 +9,8 @@ describe('🔐 Seguridad: RBAC (Control de Acceso)', () => {
   });
 
   it('debería permitir acceso a rutas públicas sin sesión', () => {
-    const publicPaths = ['/es/auth/signin', '/en/auth/register'];
-    const path = '/es/auth/signin';
+    const publicPaths = ['/es/auth/auth/signin', '/en/auth/auth/register'];
+    const path = '/es/auth/auth/signin';
     expect(publicPaths.includes(path)).toBe(true);
   });
 });

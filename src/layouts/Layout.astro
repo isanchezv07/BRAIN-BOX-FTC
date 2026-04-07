@@ -101,6 +101,13 @@ if (accessToken && refreshToken) {
     class="bg-[#050505] text-gray-300 min-h-screen flex flex-col selection:bg-blue-500/30"
     :class="isLocked ? 'lock-scroll' : ''"
   >
+    <div id="page-loader" class="page-loader hidden">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <span class="loader-text">// INITIALIZING_SYSTEM_CORE</span>
+        </div>
+    </div>
+
     <template x-if="isLocked">
       <div 
         class="timer-overlay"
@@ -136,26 +143,7 @@ if (accessToken && refreshToken) {
 
     <SpeedInsights />
     <Analytics />
-
-  <div id="global-loader" class="fixed inset-0 z-[1000] flex items-center justify-center bg-[#050505] opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="flex flex-col items-center gap-4">
-      <div class="relative w-12 h-12">
-        <div class="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
-        <div class="absolute inset-0 border-t-2 border-blue-500 rounded-full animate-spin"></div>
-      </div>
-      <span class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic animate-pulse">
-        // LOADING_MODULE
-      </span>
-    </div>
-  </div>
   
-  <style is:global>
-    /* Clase para mostrar el loader */
-    body.is-loading #global-loader {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  </style>
 
     <header
       class="sticky top-0 z-100 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl"
@@ -183,13 +171,13 @@ if (accessToken && refreshToken) {
             ) : (
               <div class="flex items-center gap-6">
                 <a
-                  href={`/${lang}/signin`}
+                  href={`/${lang}/auth/signin`}
                   class="text-[11px] font-bold text-gray-400 hover:text-white uppercase tracking-widest"
                 >
                   {t("nav.login")}
                 </a>
                 <a
-                  href={`/${lang}/register`}
+                  href={`/${lang}/auth/register`}
                   class="text-[11px] font-black bg-white text-black px-6 py-2.5 rounded-full uppercase italic hover:bg-blue-600 hover:text-white transition-all"
                 >
                   {t("nav.register")}
@@ -289,14 +277,14 @@ if (accessToken && refreshToken) {
 
             <div class="flex flex-col gap-4">
               <a
-                href={`/${lang}/signin`}
+                href={`/${lang}/auth/signin`}
                 @click="closeMenu()"
                 class="py-5 text-sm font-bold text-gray-300 uppercase tracking-[0.2em] bg-white/5 border border-white/5 rounded-2xl text-center active:scale-95 transition"
               >
                 {t("nav.login")}
               </a>
               <a
-                href={`/${lang}/register`}
+                href={`/${lang}/auth/register`}
                 @click="closeMenu()"
                 class="py-5 text-sm font-black bg-white text-black rounded-2xl uppercase italic tracking-wider text-center shadow-xl active:scale-95 transition"
               >
@@ -439,6 +427,54 @@ if (accessToken && refreshToken) {
         touch-action: manipulation;
       }
 
+      .page-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: rgba(5, 5, 5, 0.85);
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
+      }
+
+      .page-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+        display: none;
+      }
+
+      .loader-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .spinner {
+        width: 44px;
+        height: 44px;
+        border: 2px solid rgba(59, 130, 246, 0.1);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin-loader 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      .loader-text {
+        font-family: monospace;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.4em;
+        color: #3b82f6;
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+      }
+
+      @keyframes spin-loader {
+        to { transform: rotate(360deg); }
+      }
+
+      /* TIMER OVERLAY STYLES */
       .lock-scroll {
         overflow: hidden !important;
         height: 100vh !important;
@@ -521,7 +557,7 @@ if (accessToken && refreshToken) {
 
       .timer-footer {
         background: rgba(255, 255, 255, 0.03);
-        border: 1px border rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         padding: 0.75rem 1.5rem;
         border-radius: 9999px;
         font-size: 10px;
@@ -547,6 +583,19 @@ if (accessToken && refreshToken) {
 <script>
   import { supabase } from "@/lib/supabase";
 
+  const handleBeforePreparation = () => {
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.classList.remove('hidden');
+  };
+
+  const handlePageLoad = () => {
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.classList.add('hidden');
+  };
+
+  document.addEventListener('astro:before-preparation', handleBeforePreparation);
+  document.addEventListener('astro:page-load', handlePageLoad);
+
   async function forceSecurityCheck() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -568,7 +617,7 @@ if (accessToken && refreshToken) {
         document.cookie = "sb-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 
         const lang = window.location.pathname.split('/')[1] || 'es';
-        window.location.href = `/${lang}/banned?reason=${encodeURIComponent("Acceso revocado por el administrador")}`;
+        window.location.href = `/${lang}/account/banned?reason=${encodeURIComponent("Acceso revocado por el administrador")}`;
       }
     }
   }
@@ -578,14 +627,4 @@ if (accessToken && refreshToken) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') forceSecurityCheck();
   });
-</script>
-
-<script>
-  const showLoader = () => document.body.classList.add('is-loading');
-  const hideLoader = () => document.body.classList.remove('is-loading');
-
-  document.addEventListener('astro:before-preparation', showLoader);
-  document.addEventListener('astro:page-load', hideLoader);
-
-  document.addEventListener('astro:after-preparation', hideLoader);
 </script>

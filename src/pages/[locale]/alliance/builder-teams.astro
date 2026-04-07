@@ -1,11 +1,12 @@
 ---
+// @Isanchezv
+// src/pages/[locale]/alliance/builder-teams.astro
 import Layout from "@/layouts/Layout.astro";
 import { getFullTeamIntelligence } from "@/lib/ftc";
 
 const teamsParam = Astro.url.searchParams.get("teams") || "";
 const rivalsParam = Astro.url.searchParams.get("rivals") || "";
 
-// CORRECCIÓN AQUÍ: Usar las variables definidas arriba
 const teamNumbers = teamsParam.split(",").filter(Boolean);
 const rivalNumbers = rivalsParam.split(",").filter(Boolean);
 
@@ -38,7 +39,6 @@ const metricConfig = [
   <script src="https://cdn.jsdelivr.net/npm/chart.js" is:inline></script>
   
   <main class="bg-black text-white min-h-screen p-4 sm:p-8 md:p-12 lg:p-20 font-sans relative overflow-x-hidden">
-    <!-- Grid Background -->
     <div class="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
 
     <header class="mb-12 md:mb-20 relative z-10">
@@ -54,7 +54,6 @@ const metricConfig = [
         <span class="text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.2)]">Prediction</span>
       </h1>
 
-      <!-- Controles Superiores -->
       <div class="max-w-5xl space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="bg-blue-500/5 p-3 rounded-2xl border border-blue-500/20 flex gap-2 backdrop-blur-sm">
@@ -77,7 +76,6 @@ const metricConfig = [
             </button>
         </div>
 
-        <!-- Panel de Configuración y Leyenda -->
         <div id="calibrationPanel" class="hidden p-8 bg-zinc-900/80 border border-white/10 rounded-3xl backdrop-blur-3xl">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
             <div class="space-y-6">
@@ -119,38 +117,28 @@ const metricConfig = [
       </div>
     </header>
 
-    <!-- Arena de Unidades -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-24 relative z-10">
         <div id="teamGrid" class="space-y-4"></div>
         <div id="rivalGrid" class="space-y-4"></div>
     </div>
     { (allianceData.length > 0 || rivalData.length > 0) && (
       <section class="border-t border-white/5 pt-12 md:pt-20 relative z-10 space-y-12 md:space-y-20">
-        
-        <!-- Comparativa de Sinergia -->
         <div class="space-y-8">
             <div class="flex items-end gap-4 mb-8">
                 <h2 class="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Collective_Power</h2>
                 <div class="h-px flex-1 bg-gradient-to-r from-zinc-800 to-transparent mb-2 md:mb-4"></div>
             </div>
-    
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-12 relative">
-                <!-- Badge de Versus Flotante (Solo visible en pantallas grandes) -->
                 <div class="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black border border-white/10 rounded-full items-center justify-center">
                     <span class="text-[10px] font-black italic text-zinc-500">VS</span>
                 </div>
-    
-                <!-- Alianza Azul -->
                 <div class="bg-blue-500/[0.03] backdrop-blur-md p-6 md:p-8 rounded-[2rem] border border-blue-500/10 hover:border-blue-500/30 transition-colors">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                         <p class="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Blue_Synergy_Core</p>
                     </div>
-                    <!-- Grid responsive: 2 cols en móvil, 3 en tablet, 5 en desktop -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="blueSynergy"></div>
                 </div>
-    
-                <!-- Alianza Roja -->
                 <div class="bg-red-500/[0.03] backdrop-blur-md p-6 md:p-8 rounded-[2rem] border border-red-500/10 hover:border-red-500/30 transition-colors">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -161,41 +149,29 @@ const metricConfig = [
             </div>
         </div>
     
-        <!-- Prediction Box -->
         <div id="predictionBox" class="w-full bg-zinc-900 border border-white/10 p-1.5 rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl transition-all duration-700">
           <div class="bg-blue-600 p-8 md:p-16 lg:p-20 rounded-[2.2rem] md:rounded-[3.8rem] flex flex-col lg:flex-row justify-between items-center gap-10 text-black transition-colors duration-700">
-            
-            <!-- Texto de Predicción -->
             <div class="text-center lg:text-left flex-1 min-w-0 space-y-4 md:space-y-6">
               <div class="space-y-1">
-                  <!-- Badge superior más compacto -->
                   <p class="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-black/40 flex items-center justify-center lg:justify-start gap-2">
                       <span class="w-2 h-[1px] bg-black/20"></span>
                       Neural_Network_Output
                   </p>
-                  
-                  <!-- Título con Clamp para escalado fluido y sin encimarse -->
                   <h3 id="predictionTitle" class="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-black italic uppercase tracking-tighter leading-none break-words">
                       Match_Ready
                   </h3>
               </div>
-
-              <!-- Subtítulo con max-width controlado y mejor espaciado -->
               <div class="max-w-sm mx-auto lg:mx-0">
                   <p id="predictionSub" class="text-[9px] md:text-[11px] font-bold uppercase tracking-[0.15em] opacity-70 leading-relaxed italic border-l-2 border-black/30 pl-4 py-1">
                       Analizando variables de campo y consistencia de los drivers...
                   </p>
               </div>
             </div>
-    
-            <!-- Probabilidades -->
             <div class="flex flex-col sm:flex-row items-center gap-6 md:gap-8 bg-black p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl w-full lg:w-auto">
                 <div class="text-center flex-1 sm:flex-none">
                     <p class="text-[8px] md:text-[9px] font-black uppercase mb-1 text-zinc-500 tracking-widest">Blue_Win</p>
                     <p id="blueProb" class="text-6xl md:text-7xl font-black italic tracking-tighter text-blue-500">50%</p>
                 </div>
-                
-                <!-- Divisor: Horizontal en móvil, Vertical en Desktop -->
                 <div class="h-px w-12 sm:h-16 sm:w-px bg-zinc-800"></div>
                 
                 <div class="text-center flex-1 sm:flex-none">
@@ -215,13 +191,6 @@ const metricConfig = [
   const rivalData = JSON.parse(rawRivalsJson);
   let benchmarks = { auto: 100, teleop: 250, awards: 10, wr: 80 };
 
-  /**
-   * CÁLCULO DE MÉTRICAS:
-   * 1. Auto/TeleOp: Se dividen según el ratio ideal (35/65) y se comparan contra el Benchmark definido.
-   * 2. Endgame (Premios): Relación entre total de premios y la meta de temporada.
-   * 3. Defensa (Resiliencia): Se degrada según el número de derrotas (8% por derrota).
-   * 4. Consistencia: Win Rate base menos una penalización por derrotas acumuladas.
-   */
   function getMetrics(team) {
     const peak = team.summary.peakScore || 0;
     const losses = team.summary.totalLosses || 0;
@@ -262,47 +231,40 @@ const metricConfig = [
         </div>
     `).join('');
 
-    // Power Score: Promedio ponderado multiplicado por el factor de consistencia
-    return { power: (avgs.auto * 0.35 + avgs.teleop * 0.45 + avgs.endgame * 0.2) * (avgs.consistency / 100) };
+    const alliancePower = dataArr.reduce((acc, t) => acc + (t.summary.peakScore || 0), 0);
+    return { power: alliancePower };
   }
 
   function updateBattleStats() {
     const blue = renderSynergyGrid('blueSynergy', allianceData);
     const red = renderSynergyGrid('redSynergy', rivalData);
     
-    const total = (blue.power + red.power) || 1;
-    const blueProb = Math.round((blue.power / total) * 100);
-    const redProb = 100 - blueProb;
-
-    document.getElementById('blueProb').innerText = `${blueProb}%`;
-    document.getElementById('redProb').innerText = `${redProb}%`;
-
-    const boxContainer = document.querySelector('#predictionBox > div');
-    const sub = document.getElementById('predictionSub');
-    const title = document.getElementById('predictionTitle');
-    
-    // Definimos los estados para evitar repetir clases gigantes
-    const baseClasses = "p-8 md:p-16 lg:p-20 rounded-[2.2rem] md:rounded-[3.8rem] flex flex-col lg:flex-row justify-between items-center gap-10 text-black transition-all duration-700 ease-in-out";
-
-    if (blueProb >= 52) {
-        boxContainer.className = `${baseClasses} bg-blue-600 shadow-[0_0_50px_-12px_rgba(37,99,235,0.5)]`;
-        title.innerText = "BLUE_WINS";
-        sub.innerText = "LA ALIANZA AZUL POSEE UNA VENTAJA TÁCTICA SUPERIOR EN CONSISTENCIA Y AUTO-SCORE.";
-    } else if (blueProb <= 48) {
-        boxContainer.className = `${baseClasses} bg-red-600 shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)]`;
-        title.innerText = "RED_WINS";
-        sub.innerText = "ALERTA: LA ALIANZA ROJA SUPERA LOS BENCHMARKS DE RENDIMIENTO EN TELEOP.";
-    } else {
-        boxContainer.className = `${baseClasses} bg-yellow-500 shadow-[0_0_50px_-12px_rgba(234,179,8,0.5)]`;
-        title.innerText = "NEURAL_OVERLAP";
-        sub.innerText = "ESTADÍSTICAMENTE INDISTINGUIBLES. EL RESULTADO DEPENDERÁ DE LAS PENALIZACIONES EN CAMPO.";
+    function boxMuller(mean, sigma) {
+      let u = 0, v = 0, s = 0;
+      do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s = u * u + v * v; } while (s >= 1 || s === 0);
+      return mean + u * Math.sqrt(-2.0 * Math.log(s) / s) * sigma;
     }
+
+    const eventMean = (benchmarks.auto + benchmarks.teleop) || 80;
+    const sigma = Math.max(8, eventMean * 0.16);
+    let blueWins = 0;
+    const runs = 500;
+
+    for (let i = 0; i < runs; i++) {
+      if (boxMuller(blue.power, sigma) > boxMuller(red.power, sigma)) blueWins++;
+    }
+
+    const finalBlueProb = Math.round((blueWins / runs) * 100);
+    const finalRedProb = 100 - finalBlueProb;
+
+    document.getElementById('blueProb').innerText = `${finalBlueProb}%`;
+    document.getElementById('redProb').innerText = `${finalRedProb}%`;
+
+    updatePredictionVisuals(finalBlueProb);
   }
 
   function createCard(team, isBlue) {
     const metrics = getMetrics(team);
-    
-    // Mapeo de clases para asegurar que Tailwind las genere
     const theme = isBlue 
       ? { 
           border: 'hover:border-blue-500/30', 
@@ -397,25 +359,19 @@ const metricConfig = [
     });
   }
 
-  // --- Sistema de Renderizado ---
   function render() {
     const bGrid = document.getElementById('teamGrid');
     const rGrid = document.getElementById('rivalGrid');
-    
-    // 1. Limpiar grids para evitar duplicados visuales
+  
     if (bGrid) bGrid.innerHTML = allianceData.map(t => createCard(t, true)).join('');
     if (rGrid) rGrid.innerHTML = rivalData.map(t => createCard(t, false)).join('');
     
-    // 2. Reinicializar Charts (Chart.js necesita el nodo en el DOM)
     allianceData.forEach(t => initChart(t, '#3b82f6'));
     rivalData.forEach(t => initChart(t, '#ef4444'));
     
-    // 3. Recalcular predicción global
     updateBattleStats();
   }
 
-  // --- Eventos de Benchmarks (CORRECCIÓN AQUÍ) ---
-  // Añadimos 'awards' y 'wr' al array para que escuchen cambios
   ['auto', 'teleop', 'awards', 'wr'].forEach(key => {
     const slider = document.getElementById(`bench-${key}`);
     const display = document.getElementById(`val-${key}`);
@@ -425,18 +381,15 @@ const metricConfig = [
         const value = parseInt(e.target.value);
         benchmarks[key] = value;
         
-        // Actualizar el texto indicador si existe
         if (display) {
             display.innerText = value + (key === 'wr' ? '%' : '');
         }
         
-        // Renderizar todo con los nuevos valores de benchmark
         render();
       });
     }
   });
 
-  // Eventos de Input
   document.getElementById('addBtn').onclick = () => add('teams', 'teamInput');
   document.getElementById('addRivalBtn').onclick = () => add('rivals', 'rivalInput');
   
@@ -462,12 +415,16 @@ const metricConfig = [
   document.getElementById('enableBattle').onclick = () => document.getElementById('rivalInputContainer').classList.toggle('hidden');
   document.getElementById('toggleCalibration').onclick = () => document.getElementById('calibrationPanel').classList.toggle('hidden');
 
-  ['auto', 'teleop'].forEach(key => {
-    document.getElementById(`bench-${key}`).addEventListener('input', (e) => {
-      benchmarks[key] = parseInt(e.target.value);
-      document.getElementById(`val-${key}`).innerText = e.target.value;
-      render();
-    });
+  ['auto', 'teleop', 'awards', 'wr'].forEach(key => {
+    const slider = document.getElementById(`bench-${key}`);
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        benchmarks[key] = parseInt(e.target.value);
+        const display = document.getElementById(`val-${key}`);
+        if (display) display.innerText = e.target.value + (key === 'wr' ? '%' : '');
+        render(); 
+      });
+    }
   });
 
   if (new URL(window.location).searchParams.get('rivals')) document.getElementById('rivalInputContainer').classList.remove('hidden');

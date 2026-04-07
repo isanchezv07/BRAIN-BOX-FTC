@@ -13,5 +13,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   cookies.delete("sb-access-token", { path: "/" });
   cookies.delete("sb-refresh-token", { path: "/" });
 
-  return redirect(`/${lang}/signin`);
+  return redirect(`/${lang}/auth/signin`);
 };

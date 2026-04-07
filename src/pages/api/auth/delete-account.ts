@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
 
   if (!accessToken) {
     console.error("No se encontró token en las cookies");
-    return redirect("/es/signin?error=session-expired");
+    return redirect("/es/auth/signin?error=session-expired");
   }
 
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);

@@ -1,4 +1,6 @@
 ---
+// @Isanchezv
+// src/pages/[locale]/scout.astro
 import Layout from '@/layouts/Layout.astro';
 const { locale } = Astro.params;
 ---
@@ -24,7 +26,7 @@ const { locale } = Astro.params;
         DEEP <span class="text-blue-600">SCAN</span>
       </h1>
       <p class="text-zinc-500 font-mono text-xs uppercase tracking-[0.3em] mb-12 italic">
-        Análisis de Inteligencia Multianual (2022-2024)
+        Análisis de Inteligencia Multianual (2022-2025)
       </p>
 
       <form id="searchForm" class="relative group">
@@ -73,14 +75,12 @@ const { locale } = Astro.params;
     e.preventDefault();
     const number = input.value;
     if (number) {
-      // Redirigimos a la ruta dinámica que ya creamos
       window.location.href = `/${locale}/teams/${number}`;
     }
   });
 </script>
 
 <style>
-  /* Quitar flechas del input number */
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
     -webkit-appearance: none;

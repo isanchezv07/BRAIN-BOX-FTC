@@ -477,7 +477,33 @@
           "available": "Available Courses",
           "completed": "Completed Missions"
         },
-        "saveButton": "Update Credentials"
+        "saveButton": "Update Credentials",
+        "tour": {
+          "card": {
+            "title": "Profile Summary",
+            "desc": "Here you can see your basic information"
+          },
+          "avatar": {
+            "title": "Profile Photo",
+            "desc": "Here you can change your profile photo"
+          },
+          "username": {
+            "title": "Username",
+            "desc": "Here you can change your username"
+          },
+          "programs": {
+            "title": "Assigned Programs",
+            "desc": "Here you can select the programs you have been in"
+          },
+          "stats": {
+            "title": "Progress Statistics",
+            "desc": "Here you can see your progress in the programs"
+          },
+          "save": {
+            "title": "Save Changes",
+            "desc": "Don't forget to save your changes"
+          }
+        }
   },
   "wip": {
         "marquee": {
@@ -530,8 +556,10 @@
   "scanner": {
         "title": "Portfolio",
         "highlight": "Scanner",
-        "subtitle": "Engineering analysis with",
+        "subtitle": "Engineering analysis with standards of",
+        "credits": "AI Credits",
         "world_class": "World Championship",
+        "objective": "Objective Configuration (Specific by Award)",
         "dropzone": {
             "idle": "DRAG YOUR PORTFOLIO OR CLICK",
             "format": "Format: PDF (Recommended < 5MB)"
@@ -1168,5 +1196,29 @@
             ]
           }
         ]
+  },
+  "tour": {
+    "step1": {
+      "title": "Active Beta Phase",
+      "desc": "This tool is in beta and may show variations. Results are not official; consider this a strategic guide for your team."
+    },
+    "step2": {
+      "title": "Analysis Credits",
+      "desc": "You have a limited number of attempts. Use them responsibly and ensure you upload the correct file each time."
+    },
+    "step3": {
+      "title": "Target Category",
+      "desc": "Before uploading your PDF, you must select the award you wish to evaluate to apply the correct technical rubric."
+    },
+    "step4": {
+      "title": "Portfolio Upload",
+      "desc": "Upload your portfolio here. Make sure it is a PDF file and does not exceed the 5MB limit."
+    },
+    "btns": {
+      "next": "Next",
+      "prev": "Previous",
+      "done": "Got it",
+      "replay": "¿Repeat Tour?"
+    }
   }
 }

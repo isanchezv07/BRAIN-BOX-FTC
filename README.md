@@ -344,7 +344,7 @@ npm run preview  # Para previsualizar el build
    - Inicia sesión en `/es/signin` o `/en/signin`
 
 2. **Navegar Cursos**
-   - Accede a tu dashboard en `/es/dashboard` o `/en/dashboard`
+   - Accede a tu dashboard en `/es/account/dashboard` o `/en/account/dashboard`
    - Explora los cursos disponibles
    - Completa las lecciones en orden (respetando prerequisitos)
 
@@ -372,7 +372,7 @@ npm run preview  # Para previsualizar el build
 
 1. **Acceso al Panel Admin**
    - Inicia sesión con una cuenta de administrador
-   - Accede a `/es/admin/dashboard` o `/en/admin/dashboard`
+   - Accede a `/es/admin/account/dashboard` o `/en/admin/account/dashboard`
 
 2. **Gestión de Usuarios**
    - Ve todos los usuarios en el panel de gestión

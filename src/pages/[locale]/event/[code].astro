@@ -1,4 +1,6 @@
 ---
+// @Isanchezv
+// src/pages/[locale]/event/[code].astro
 import Layout from "@/layouts/Layout.astro";
 import { getFullTeamIntelligence } from "@/lib/ftc";
 
@@ -9,19 +11,11 @@ const season = Astro.url.searchParams.get('season') || "2025";
 const intel = await getFullTeamIntelligence(teamNumberParam);
 const seasonData = intel.history.find(s => s.season === season);
 
-// --------------------------------
-// 1. FILTRAR EVENTO
-// --------------------------------
-
 const rawMatches = seasonData?.matches.filter(m => {
   const eventCode = m.eventCode || "";
   return eventCode.toLowerCase().includes(code.toLowerCase()) || 
          code.toLowerCase().includes(eventCode.toLowerCase());
 }) || [];
-
-// --------------------------------
-// 2. DE-DUPLICACIÓN
-// --------------------------------
 
 const uniqueMatchesMap = new Map();
 
@@ -42,10 +36,6 @@ rawMatches.forEach(m => {
 
 const uniqueMatches = Array.from(uniqueMatchesMap.values());
 
-// --------------------------------
-// 3. ORDEN
-// --------------------------------
-
 const getOrder = (lvl) => {
   const l = (lvl || "").toLowerCase();
   if (l.includes("practice")) return 1;
@@ -65,18 +55,10 @@ const sortedMatches = uniqueMatches.sort((a, b) => {
 
 });
 
-// --------------------------------
-// 4. FILTRO SOLO MATCHES DEL EQUIPO
-// --------------------------------
-
 const isTeamMatch = (m) =>
   m.teams?.some(t => String(t.teamNumber) === String(teamNumberParam));
 
 const teamMatches = sortedMatches.filter(isTeamMatch);
-
-// --------------------------------
-// 5. SEGMENTACIÓN
-// --------------------------------
 
 const practiceMatches = teamMatches.filter(m => {
   const level = (m.tournamentLevel || "").toLowerCase();
@@ -93,10 +75,6 @@ const playoffMatches = teamMatches.filter(m => {
   return level.includes("playoff");
 });
 
-// --------------------------------
-// PLAYOFF BRACKETS
-// --------------------------------
-
 const playoffBrackets = {};
 
 playoffMatches.forEach(m => {
@@ -111,14 +89,9 @@ playoffMatches.forEach(m => {
 
 });
 
-// ordenar matches dentro de cada serie
 Object.values(playoffBrackets).forEach((matches: any) => {
   matches.sort((a, b) => (a.matchNumber ?? 0) - (b.matchNumber ?? 0));
 });
-
-// --------------------------------
-// 6. EFICIENCIA
-// --------------------------------
 
 const competitiveMatches = [...qualMatches, ...playoffMatches];
 
@@ -141,18 +114,10 @@ const efficiency =
     ? ((eventWins / competitiveMatches.length) * 100).toFixed(0)
     : 0;
 
-// --------------------------------
-// 7. AWARDS
-// --------------------------------
-
 const eventAwards =
   seasonData?.awards.filter(a =>
     a.eventCode?.toLowerCase().includes(code.toLowerCase())
   ) || [];
-
-// --------------------------------
-// 8. UI
-// --------------------------------
 
 const tabBtnBase =
   "px-6 md:px-8 py-3 md:py-4 border border-white/5 rounded-2xl font-black italic text-[10px] md:text-[11px] transition-all whitespace-nowrap text-zinc-500 uppercase tracking-widest tab-btn cursor-pointer hover:bg-white/5";
@@ -235,7 +200,7 @@ const tabBtnBase =
                             <span class="text-[8px] font-black text-blue-500/40 uppercase mb-1 block tracking-[0.4em]">#MATCH_{m.matchNumber}</span>
                             <span class="text-[9px] md:text-[10px] font-bold text-zinc-600 uppercase mb-1 block tracking-widest">{m.description}</span>
                             <p class={`text-3xl md:text-4xl font-black italic uppercase tracking-tighter ${win ? 'text-blue-500' : tie ? 'text-white' : 'text-red-600'}`}>
-                              {win ? 'SUCCESS' : tie ? 'DRAW' : 'FAILURE'}
+                              {win ? 'WIN' : tie ? 'TIE' : 'LOSE'}
                             </p>
                           </div>
     

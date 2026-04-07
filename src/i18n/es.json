@@ -477,7 +477,33 @@
             "available": "Cursos Disponibles",
             "completed": "Misiones Completadas"
         },
-        "saveButton": "Actualizar Credenciales"
+        "saveButton": "Actualizar Credenciales",
+        "tour": {
+          "card": {
+            "title": "Resumen de Perfil",
+            "desc": "Aquí puedes ver tu información básica"
+          },
+          "avatar": {
+            "title": "Foto de Perfil",
+            "desc": "Aquí puedes cambiar tu foto de perfil"
+          },
+          "username": {
+            "title": "Nombre de Usuario",
+            "desc": "Aquí puedes cambiar tu nombre de usuario"
+          },
+          "programs": {
+            "title": "Programas Asignados",
+            "desc": "Aquí puedes seleccionar los programas en los que has estado"
+          },
+          "stats": {
+            "title": "Estadísticas de Progreso",
+            "desc": "Aquí puedes ver tu progreso de cursos completados"
+          },
+          "save": {
+            "title": "Guardar Cambios",
+            "desc": "No olvides guardar tus cambios"
+          }
+        }
   },
   "wip": {
     "marquee": {
@@ -531,7 +557,9 @@
     "title": "Portfolio",
     "highlight": "Scanner",
     "subtitle": "Análisis de ingeniería con estándares de",
+    "credits": "Créditos de IA",
     "world_class": "World Championship",
+    "objective": "Configuración de Objetivo (Específico por Premio)",
     "dropzone": {
         "idle": "ARRASTRA TU PORTAFOLIO O HAZ CLIC",
         "format": "Formato: PDF (Recomendado < 5MB)"
@@ -1168,5 +1196,29 @@
         ]
       }
     ]
+  },
+  "tour": {
+    "step1": {
+      "title": "Fase Beta Activa",
+      "desc": "Esta herramienta está en fase beta y puede presentar variaciones. Los resultados no son oficiales; considéralo una guía estratégica para tu equipo."
+    },
+    "step2": {
+      "title": "Créditos de Análisis",
+      "desc": "Tienes un número limitado de intentos. Úsalos con responsabilidad y asegúrate de cargar el archivo definitivo cada vez."
+    },
+    "step3": {
+      "title": "Categoría de Objetivo",
+      "desc": "Antes de subir tu PDF, selecciona obligatoriamente el premio que deseas evaluar para aplicar la rúbrica técnica correcta."
+    },
+    "step4": {
+      "title": "Carga de Portafolio",
+      "desc": "Sube tu portafolio aquí. Asegúrate de que sea un archivo PDF y que no exceda el límite de 5MB."
+    },
+    "btns": {
+      "next": "Siguiente",
+      "prev": "Anterior",
+      "done": "Entendido",
+      "replay": "¿Repetir Tour?"
+    }
   }
 }

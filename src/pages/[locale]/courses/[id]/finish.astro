@@ -12,7 +12,7 @@ const { id: courseId } = Astro.params;
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
 
-if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/signin`);
+if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/auth/signin`);
 
 const { data: sessionData, error: authError } = await supabase.auth.setSession({
     access_token: accessToken.value,
@@ -21,7 +21,7 @@ const { data: sessionData, error: authError } = await supabase.auth.setSession({
 
 const user = sessionData?.session?.user;
 
-if (!user || authError) return Astro.redirect(`/${lang}/signin`);
+if (!user || authError) return Astro.redirect(`/${lang}/auth/signin`);
 
 const { data: allLessons } = await supabase
     .from("lessons")
@@ -179,7 +179,7 @@ const providesCertificate = course?.has_certificate ?? false;
                 )}
                 
                 <a 
-                    href={`/${lang}/dashboard`} 
+                    href={`/${lang}/account/dashboard`} 
                     class="mt-4 text-gray-600 text-[9px] font-black uppercase tracking-[0.3em] hover:text-white transition-all italic"
                 >
                     {t('results.btn_back')}

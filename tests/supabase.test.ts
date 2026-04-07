@@ -7,7 +7,6 @@ describe('🗄️ Cliente de Supabase', () => {
   });
 
   it('debería manejar errores de autenticación simulados', async () => {
-    // Simulamos una respuesta de error de Supabase
     const mockAuth = vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValue({
       data: { user: null, session: null },
       error: { message: 'Invalid credentials', status: 400 } as any

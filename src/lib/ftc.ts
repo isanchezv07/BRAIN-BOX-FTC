@@ -1,3 +1,4 @@
+// @Isanchezv
 // src/lib/ftc.ts
 
 async function safeFetch(url: string, options: any = {}, timeout = 8000) {
@@ -19,8 +20,10 @@ export async function getFullTeamIntelligence(teamNumber: string) {
 
   const SEASONS = ["2025", "2024", "2023", "2022"];
 
-  const USERNAME = import.meta.env.FIRST_USERNAME;
-  const AUTH_TOKEN = import.meta.env.FIRST_AUTH_TOKEN;
+  //const USERNAME = import.meta.env.FIRST_USERNAME;
+  //const AUTH_TOKEN = import.meta.env.FIRST_AUTH_TOKEN;
+  const USERNAME = "isacdev";
+  const AUTH_TOKEN = "4EB0A04C-D6D3-436C-9983-9E6AF380D51D";
 
   const auth = Buffer.from(`${USERNAME}:${AUTH_TOKEN}`).toString("base64");
 

@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       .single();
 
     if (!validOtp) {
-      return redirect(`/${lang}/signin?error=${encodeURIComponent("Código inválido o reemplazado")}`);
+      return redirect(`/${lang}/auth/signin?error=${encodeURIComponent("Código inválido o reemplazado")}`);
     }
 
     const tempPassword = Array.from(crypto.getRandomValues(new Uint8Array(20)))
@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     if (updateError) {
       console.error("Error Admin Update:", updateError.message);
-      return redirect(`/${lang}/signin?error=Security_Update_Failed`);
+      return redirect(`/${lang}/auth/signin?error=Security_Update_Failed`);
     }
 
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     if (signInError || !signInData.session) {
       console.error("Error SignIn Password Temporal:", signInError?.message);
-      return redirect(`/${lang}/signin?error=Auth_Final_Failed`);
+      return redirect(`/${lang}/auth/signin?error=Auth_Final_Failed`);
     }
 
     await supabase.from("manual_otps").update({ is_used: true }).eq("id", validOtp.id);
@@ -58,11 +58,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   } else if (password && emailInput) {
     const { data, error } = await supabase.auth.signInWithPassword({ email: emailInput, password });
-    if (error || !data.session) return redirect(`/${lang}/signin?error=Credenciales_Incorrectas`);
+    if (error || !data.session) return redirect(`/${lang}/auth/signin?error=Credenciales_Incorrectas`);
     sessionData = data.session;
   }
 
-  if (!sessionData) return redirect(`/${lang}/signin?error=Session_Null`);
+  if (!sessionData) return redirect(`/${lang}/auth/signin?error=Session_Null`);
 
   const { access_token, refresh_token, user } = sessionData;
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
@@ -70,5 +70,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   cookies.set("sb-access-token", access_token, { path: "/", sameSite: "lax", secure: true });
   cookies.set("sb-refresh-token", refresh_token, { path: "/", sameSite: "lax", secure: true });
 
-  return redirect(profile?.role === "admin" ? `/${lang}/admin/dashboard` : `/${lang}/dashboard`);
+  return redirect(profile?.role === "admin" ? `/${lang}/admin/dashboard` : `/${lang}/account/dashboard`);
 };

@@ -1,24 +1,24 @@
 User-agent: *
 
-Disallow: /es/dashboard
-Disallow: /en/dashboard
-Disallow: /pt/dashboard
-Disallow: /es/perfil
-Disallow: /en/perfil
-Disallow: /pt/perfil
+Disallow: /es/account/dashboard
+Disallow: /en/account/dashboard
+Disallow: /pt/account/dashboard
+Disallow: /es/account/perfil
+Disallow: /en/account/perfil
+Disallow: /pt/account/perfil
 
 Disallow: */admin/
 Disallow: */mod/
 Disallow: */teacher/
 
-Disallow: */banned
+Disallow: */account/banned
 
-Disallow: */signin
-Disallow: */register
-Disallow: */forgot-password
-Disallow: */update-password
-Disallow: */login-emergency
-Disallow: */verify-email
+Disallow: */auth/signin
+Disallow: */auth/register
+Disallow: */auth/forgot-password
+Disallow: */auth/update-password
+Disallow: */auth/login-emergency
+Disallow: */auth/verify-email
 Disallow: /auth/callback
 Disallow: /api/auth/
 

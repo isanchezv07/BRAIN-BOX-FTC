@@ -1,0 +1,397 @@
+---
+// @Isanchezv
+// src/pages/[locale]/account/perfil.astro
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { Filter } from 'glin-profanity';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) return Astro.redirect(`/${lang}/auth/signin`);
+
+const profanityFilter = new Filter({
+  replaceWith: '***',
+  detectLeetspeak: true
+});
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  
+  const rawUsername = formData.get("username")?.toString().toLowerCase().trim() || "";
+  const cleanUsername = profanityFilter.checkProfanity(rawUsername).processedText;
+
+  const rawBio = formData.get("bio")?.toString() || "";
+  const cleanBio = profanityFilter.checkProfanity(rawBio).processedText;
+
+  const avatarFile = formData.get("avatar") as File;
+  const deleteAvatar = formData.get("delete_avatar") === "true";
+  let avatar_url = undefined;
+
+  if (deleteAvatar) {
+    avatar_url = null;
+  } else if (avatarFile && avatarFile.size > 0) {
+    const fileName = `${user.id}/${Date.now()}.jpg`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, avatarFile, { upsert: true, contentType: avatarFile.type });
+
+    if (uploadData) {
+      const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      avatar_url = data.publicUrl;
+    } else if (uploadError) {
+      console.error("Error subiendo imagen:", uploadError.message);
+    }
+  }
+
+  const updateData: any = { 
+    username: cleanUsername,
+    bio: cleanBio,
+    team_number: formData.get("team_number") ? parseInt(formData.get("team_number") as string) : null,
+    country: formData.get("country")?.toString(),
+    languages: formData.getAll("languages").map(l => l.toString()),
+    first_categories: formData.getAll("first_categories").map(c => c.toString())
+  };
+
+  if (avatar_url !== undefined) {
+    updateData.avatar_url = avatar_url;
+  }
+  
+  const { error: updateError } = await supabase.from("profiles").update(updateData).eq("id", user.id);
+  if (updateError) console.error("Error al actualizar perfil:", updateError.message);
+}
+
+const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+const { data: courses } = await supabase.from("courses").select("id, lessons(id)").eq("is_published", true);
+const { data: progress } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id).eq("completed", true);
+
+const completedLessonIds = new Set(progress?.map(p => p.lesson_id) || []);
+const completedCoursesCount = courses?.filter(c => (c.lessons || []).every(l => completedLessonIds.has(l.id))).length || 0;
+
+const initials = profile?.full_name?.split(" ").map(n => n[0]).join("").toUpperCase() || "??";
+
+const availableLanguages = ["Español", "English", "Português", "Français", "Deutsch"];
+const firstPrograms = [
+  { id: 'FLL', label: 'FLL', color: 'peer-checked:bg-red-600 peer-checked:border-red-600', hover: 'hover:border-red-500/30' },
+  { id: 'FTC', label: 'FTC', color: 'peer-checked:bg-orange-600 peer-checked:border-orange-600', hover: 'hover:border-orange-500/30' },
+  { id: 'FRC', label: 'FRC', color: 'peer-checked:bg-blue-600 peer-checked:border-blue-600', hover: 'hover:border-blue-500/30' }
+];
+
+const countries = ["Afganistán","Albania","Alemania","Andorra","Angola","Antigua y Barbuda","Arabia Saudita","Argelia","Argentina","Armenia","Australia","Austria","Azerbaiyán","Bahamas","Bangladés","Barbados","Baréin","Bélgica","Belice","Benín","Bielorrusia","Bolivia","Bosnia y Herzegovina","Botsuana","Brasil","Brunéi","Bulgaria","Burkina Faso","Burundi","Bután","Cabo Verde","Camboya","Camerún","Canadá","Catar","Chad","Chile","China","Chipre","Colombia","Comoras","Congo","Corea del Norte","Corea del Sur","Costa Rica","Croacia","Cuba","Dinamarca","Dominica","Ecuador","Egipto","El Salvador","Emiratos Árabes Unidos","Eritrea","Eslovaquia","Eslovenia","España","Estados Unidos","Estonia","Esuatini","Etiopía","Filipinas","Finlandia","Fiyi","Francia","Gabón","Gambia","Georgia","Ghana","Granada","Grecia","Guatemala","Guyana","Guinea","Guinea Ecuatorial","Guinea-Bisáu","Haití","Honduras","Hungría","India","Indonesia","Irak","Irán","Irlanda","Islandia","Israel","Italia","Japón","México","Perú","Portugal","Reino Unido","República Dominicana","Uruguay","Venezuela"].sort(); 
+
+const tourData = {
+  nextBtnText: t('tour.btns.next'),
+  prevBtnText: t('tour.btns.prev'),
+  doneBtnText: t('tour.btns.done'),
+  replayText: t('tour.btns.replay'),
+  steps: [
+    { 
+      element: '#tour-card', 
+      title: t('profile.tour.card.title'), 
+      desc: t('profile.tour.card.desc')
+    },
+    { 
+      element: '#tour-avatar', 
+      title: t('profile.tour.avatar.title'), 
+      desc: t('profile.tour.avatar.desc')
+    },
+    { 
+      element: '#tour-username', 
+      title: t('profile.tour.username.title'), 
+      desc: t('profile.tour.username.desc')
+    },
+    { 
+      element: '#tour-programs', 
+      title: t('profile.tour.programs.title'), 
+      desc: t('profile.tour.programs.desc')
+    },
+    { 
+      element: '#tour-stats', 
+      title: t('profile.tour.stats.title'), 
+      desc: t('profile.tour.stats.desc')
+    },
+    { 
+      element: '#tour-save', 
+      title: t('profile.tour.save.title'), 
+      desc: t('profile.tour.save.desc')
+    }
+  ]
+};
+---
+
+<Layout title={`${t('profile.title')}`}>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+
+  <div id="tour-config" data-translations={JSON.stringify(tourData)}></div>
+
+  <main class="min-h-screen bg-[#050505] text-white p-6 pt-24 animate-in fade-in duration-700">
+    <div class="max-w-4xl mx-auto space-y-8">
+      
+      <nav class="flex items-center">
+        <a href={`/${lang}/account/dashboard`} class="group/back inline-flex items-center gap-3 text-[11px] font-black text-gray-500 hover:text-white transition-all tracking-[0.2em] italic uppercase">
+          <div class="p-2 rounded-full border border-white/5 group-hover/back:border-blue-500/50 group-hover/back:bg-blue-500/10 transition-all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="group-hover/back:-translate-x-1 transition-transform">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </div>
+          <span>{t('profile.button.back')}</span>
+        </a>
+      </nav>
+
+      <button id="replay-tour-btn" class="fixed bottom-0 right-8 z-[9999] hidden items-center gap-3 text-[10px] font-black text-white hover:text-white transition-all uppercase tracking-[0.2em] group bg-blue-500/50 backdrop-blur-md border border-white/5 px-4 py-3 rounded-full hover:border-blue-500/50 hover:bg-blue-500/10 shadow-2xl">
+        {tourData.replayText}
+      </button>
+
+      <section id="tour-card" class="relative bg-[#0a0a0a] border border-white/5 rounded-[3rem] p-8 overflow-hidden shadow-2xl">
+        <div class="flex flex-col md:flex-row items-center gap-8 relative z-10">
+          <div class="relative group/avatar" id="tour-avatar">
+            <div class="w-32 h-32 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 p-[2px] shadow-2xl overflow-hidden">
+                <div class="w-full h-full rounded-full bg-[#050505] flex items-center justify-center text-3xl font-black italic overflow-hidden">
+                  <img 
+                    id="avatar-img" 
+                    src={profile?.avatar_url ? `${profile.avatar_url}?t=${Date.now()}` : ''} 
+                    class={`w-full h-full object-cover ${!profile?.avatar_url ? 'hidden' : ''}`} 
+                  />
+                  <span id="avatar-initials" class={`${profile?.avatar_url ? 'hidden' : ''}`}>{initials}</span>
+                </div>
+            </div>
+            <label for="avatar-input" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover/avatar:opacity-100 cursor-pointer transition-opacity border border-blue-500/50">
+                <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </label>
+          </div>
+          <div class="text-center md:text-left flex-1">
+            <h1 class="text-3xl font-black uppercase italic tracking-tighter leading-none">{profile?.full_name || 'Agente'}</h1>
+            <div class="flex flex-wrap justify-center md:justify-start items-center gap-3 mt-3">
+              <p class="text-blue-500 font-bold text-[10px] tracking-[0.4em] uppercase drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">
+                TEAM_{profile?.team_number || '00'}
+              </p>
+              {profile?.first_categories?.map(cat => (
+                <span class={`text-[9px] px-3 py-1 rounded-full border border-white/10 font-black italic uppercase bg-white/5`}>
+                  {cat}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-20">
+        <div id="tour-fields" class="md:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] p-8 relative shadow-xl">
+          <form id="profile-form" method="POST" enctype="multipart/form-data" class="space-y-8">
+            <input type="file" id="avatar-input" name="avatar" class="hidden" accept="image/*" />
+            <input type="hidden" id="delete-avatar-input" name="delete_avatar" value="false" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div class="space-y-2 sm:col-span-2">
+                <label class="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  {t('profile.label.fullname')} 
+                </label>
+                <input type="text" value={profile?.full_name} readonly class="w-full bg-white/2 border border-white/5 rounded-2xl p-4 text-sm text-gray-500 font-bold cursor-not-allowed italic" />
+                <p class="text-[8px] text-gray-600 uppercase font-bold tracking-tight">{t('profile.label.fullname_desc')} </p>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.username')}</label>
+                <input id="tour-username" name="username" type="text" value={profile?.username} class="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm focus:border-blue-500/50 outline-none transition-all text-white font-bold" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.team')}</label>
+                <input id="tour-team" name="team_number" type="number" value={profile?.team_number} placeholder="00" class="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm focus:border-blue-500/50 outline-none transition-all text-white font-bold" />
+              </div>
+
+              <div class="space-y-2 sm:col-span-2 relative">
+                <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.country')}</label>
+                <input type="text" id="country-search" value={profile?.country} autocomplete="off" class="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm focus:border-blue-500/50 outline-none transition-all text-white font-bold" />
+                <input type="hidden" name="country" id="country-hidden" value={profile?.country} />
+                <div id="country-list" class="hidden absolute z-50 w-full mt-2 max-h-48 overflow-y-auto bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-2xl custom-scrollbar">
+                  {countries.map(c => <div class="country-option px-4 py-3 hover:bg-blue-600/20 cursor-pointer text-[11px] uppercase font-bold tracking-widest border-b border-white/5" data-value={c}>{c}</div>)}
+                </div>
+              </div>
+
+              <div id="tour-programs" class="space-y-4 sm:col-span-2">
+                <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.categories')}</label>
+                <div class="flex flex-wrap gap-3">
+                  {firstPrograms.map(p => (
+                    <label class={`flex items-center justify-center gap-3 px-5 py-3 bg-black border border-white/5 rounded-xl cursor-pointer transition-all group ${p.hover}`}>
+                      <input type="checkbox" name="first_categories" value={p.id} checked={profile?.first_categories?.includes(p.id)} class="hidden peer" />
+                      <div class={`w-3 h-3 border border-white/20 rounded-sm transition-all ${p.color}`}></div>
+                      <span class="text-[11px] text-gray-400 group-hover:text-white peer-checked:text-white uppercase font-black tracking-widest italic">{p.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.bio')}</label>
+              <textarea name="bio" rows="3" maxlength="160" class="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm font-bold focus:border-blue-500/50 outline-none transition-all text-white resize-none">{profile?.bio}</textarea>
+            </div>
+
+            <div class="space-y-4">
+              <label class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">{t('profile.label.languages')}</label>
+              <div class="flex flex-wrap gap-3">
+                {availableLanguages.map(langName => (
+                  <label class="flex items-center justify-center gap-2 px-4 py-2 bg-black border border-white/5 rounded-xl cursor-pointer hover:border-blue-500/30 transition-all group">
+                    <input type="checkbox" name="languages" value={langName} checked={profile?.languages?.includes(langName)} class="hidden peer" />
+                    <div class="w-3 h-3 border border-white/20 rounded-sm peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all"></div>
+                    <span class="text-[10px] text-gray-400 group-hover:text-white peer-checked:text-white uppercase font-black tracking-widest">{langName}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button id="tour-save" type="submit" class="w-full py-5 bg-blue-600 text-black font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-white transition-all active:scale-[0.98] shadow-lg shadow-blue-500/10">
+                {t('profile.saveButton')}
+            </button>
+          </form>
+        </div>
+
+        <aside id="tour-stats" class="space-y-4">
+          <div class="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] p-8 text-center group hover:border-white/20 transition-all">
+            <p class="text-5xl font-black italic text-white leading-none">{courses?.length || 0}</p>
+            <p class="text-[9px] text-gray-600 font-black uppercase tracking-widest mt-3">{t('profile.stats.available')}</p>
+          </div>
+          <div class="bg-[#0a0a0a] border border-blue-500/10 rounded-[2.5rem] p-8 text-center shadow-lg shadow-blue-500/5">
+            <p class="text-5xl font-black italic text-blue-500 leading-none">{completedCoursesCount}</p>
+            <p class="text-[9px] text-blue-400/60 font-black uppercase tracking-widest mt-3">{t('profile.stats.completed')}</p>
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  // @ts-nocheck
+  import { driver } from "driver.js";
+
+  function initProfileLogic() {
+    const searchInput = document.getElementById('country-search');
+    const countryList = document.getElementById('country-list');
+    const hiddenInput = document.getElementById('country-hidden');
+    const options = document.querySelectorAll('.country-option');
+
+    // País Search
+    searchInput?.addEventListener('focus', () => countryList?.classList.remove('hidden'));
+    document.addEventListener('click', (e) => { 
+        if (!searchInput?.contains(e.target) && !countryList?.contains(e.target)) countryList?.classList.add('hidden'); 
+    });
+
+    searchInput?.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        options.forEach(opt => opt.style.display = opt.innerText.toLowerCase().includes(term) ? 'block' : 'none');
+    });
+
+    options.forEach(opt => opt.addEventListener('click', () => {
+        searchInput.value = opt.getAttribute('data-value');
+        hiddenInput.value = opt.getAttribute('data-value');
+        countryList?.classList.add('hidden');
+    }));
+    
+    // Avatar Preview
+    const avatarInput = document.getElementById('avatar-input');
+    avatarInput?.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('avatar-img');
+                const initials = document.getElementById('avatar-initials');
+                if (img) { img.src = ev.target.result; img.classList.remove('hidden'); }
+                if (initials) initials.classList.add('hidden');
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+  }
+
+  function initTour() {
+    const replayBtn = document.getElementById('replay-tour-btn');
+    const configEl = document.getElementById('tour-config');
+    if (!configEl || !replayBtn) return;
+
+    const data = JSON.parse(configEl.dataset.translations);
+
+    const d = driver({
+        showProgress: true,
+        animate: true,
+        overlayColor: '#000',
+        overlayOpacity: 0.9,
+        nextBtnText: data.nextBtnText,
+        prevBtnText: data.prevBtnText,
+        doneBtnText: data.doneBtnText,
+        steps: data.steps.map(s => ({
+            element: s.element,
+            popover: { 
+                title: s.title, 
+                description: s.desc, 
+                side: "bottom", 
+                align: 'start' 
+            }
+        })),
+        onDestroyed: () => {
+            localStorage.setItem('tour_perfil_realizado', 'true');
+            replayBtn.style.display = 'flex';
+        }
+    });
+
+    const yaLoVio = localStorage.getItem('tour_perfil_realizado');
+    if (!yaLoVio) {
+        d.drive();
+    } else {
+        replayBtn.style.display = 'flex';
+    }
+
+    replayBtn.onclick = () => d.drive();
+  }
+
+  // Ejecución
+  function run() {
+    initProfileLogic();
+    initTour();
+  }
+
+  run();
+  document.addEventListener('astro:page-load', run);
+</script>
+
+<style is:global>
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+  .driver-popover {
+    background-color: #0a0a0a !important;
+    color: white !important;
+    border: 1px solid rgba(168, 85, 247, 0.4) !important;
+    border-radius: 24px !important;
+    padding: 24px !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.9) !important;
+  }
+  .driver-popover-title {
+    font-weight: 900 !important;
+    font-style: italic !important;
+    text-transform: uppercase !important;
+    color: #a855f7 !important;
+    font-size: 18px !important;
+  }
+  .driver-popover-description {
+    color: #d1d5db !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+  .driver-popover-btn {
+    background: #111 !important;
+    color: white !important;
+    border: 1px solid #333 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    border-radius: 12px !important;
+  }
+  .driver-popover-btn:hover {
+    background: #a855f7 !important;
+    border-color: #a855f7 !important;
+  }
+</style>

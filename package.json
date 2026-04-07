@@ -9,7 +9,8 @@
     "astro": "astro",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "api": "npx vite-node --env-file=.env src/lib/debug-first-api.ts"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
@@ -27,7 +28,6 @@
     "cannon-es": "^0.20.0",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
-    "dotenv": "^17.2.3",
     "driver.js": "^1.4.0",
     "glin-profanity": "^3.1.5",
     "html2canvas": "^1.4.1",

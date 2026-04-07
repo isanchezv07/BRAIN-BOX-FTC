@@ -55,7 +55,7 @@ import Layout from "@/layouts/Layout.astro";
 
     if (error || !data.session) {
       setTimeout(() => {
-        window.location.href = "/es/signin?error=session_expired";
+        window.location.href = "/es/auth/signin?error=session_expired";
       }, 1000);
       return;
     }
@@ -72,7 +72,7 @@ import Layout from "@/layouts/Layout.astro";
     document.cookie = `temp_username=${encodeURIComponent(tempName)}${cookieOptions}; max-age=60`;
 
     setTimeout(() => {
-      window.location.href = "/es/dashboard";
+      window.location.href = "/es/account/dashboard";
     }, 2000);
   };
 

@@ -1,4 +1,6 @@
 ---
+// @Isanchezv
+// src/pages/[locale]/teams/[number].astro
 import Layout from "@/layouts/Layout.astro";
 import { getFullTeamIntelligence } from "@/lib/ftc";
 
@@ -24,7 +26,7 @@ const getSeasonEventCount = (seasonData) => {
 };
 ---
 
-<Layout title={`INTEL // ${intel.profile.nameShort}`}>
+<Layout title={`${intel.profile.nameShort}`}>
   <main class="bg-black text-white min-h-screen p-4 sm:p-8 md:p-20 font-sans relative overflow-x-hidden">
     <div class="fixed inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] bg-size[20px_20px] pointer-events-none"></div>
 

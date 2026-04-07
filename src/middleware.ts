@@ -9,13 +9,13 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
   const isPublicRoute =
     pathname === "/" ||
     pathname.match(/^\/(es|en|pt)$/) ||
-    pathname.includes("/signin") ||
-    pathname.includes("/register") ||
-    pathname.includes("/forgot-password") ||
-    pathname.includes("/update-password") ||
-    pathname.includes("/login-emergency") ||
-    pathname.includes("/verify-email") ||
-    pathname.includes("/auth/callback") ||
+    pathname.includes("/auth/signin") ||
+    pathname.includes("/auth/register") ||
+    pathname.includes("/auth/forgot-password") ||
+    pathname.includes("/auth/update-password") ||
+    pathname.includes("/auth/login-emergency") ||
+    pathname.includes("/auth/verify-email") ||
+    pathname.includes("/callback") ||
     pathname.includes("/api/auth/") ||
     pathname.includes("/legal/terms") ||
     pathname.includes("/legal/privacy") ||
@@ -27,7 +27,7 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
     pathname.includes("/teams/") ||
     pathname.includes("/event/") ||
     pathname.includes("/alliance/") || 
-    pathname.includes("/banned");
+    pathname.includes("/account/banned");
 
   if (isPublicRoute) return next();
 
@@ -36,7 +36,7 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
   const accessToken = cookies.get("sb-access-token")?.value;
 
   if (!accessToken) {
-    return redirect(`/${lang}/signin`);
+    return redirect(`/${lang}/auth/signin`);
   }
 
   const supabaseAdmin = createClient(
@@ -53,7 +53,7 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
   if (authError || !user) {
     cookies.delete("sb-access-token", { path: "/" });
     cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/signin`);
+    return redirect(`/${lang}/auth/signin`);
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -65,13 +65,13 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
   if (profileError || !profile) {
     cookies.delete("sb-access-token", { path: "/" });
     cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/signin`);
+    return redirect(`/${lang}/auth/signin`);
   }
 
   if (profile.status === "perma-ban") {
     cookies.delete("sb-access-token", { path: "/" });
     cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/banned`); // solo /banned
+    return redirect(`/${lang}/account/banned`); 
   }
 
   if (profile.status === "temporal-ban") {
@@ -79,19 +79,19 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
     cookies.delete("sb-refresh-token", { path: "/" });
 
     const untilParam = profile.ban_until ? `?until=${encodeURIComponent(profile.ban_until)}` : "";
-    return redirect(`/${lang}/banned${untilParam}`);
+    return redirect(`/${lang}/account/banned${untilParam}`);
   }
 
   if (pathname.includes("/admin") && profile.role !== "admin") {
-    return redirect(`/${lang}/dashboard`);
+    return redirect(`/${lang}/account/dashboard`);
   }
 
   if (pathname.includes("/mod") && !["admin", "mod"].includes(profile.role)) {
-    return redirect(`/${lang}/dashboard`);
+    return redirect(`/${lang}/account/dashboard`);
   }
 
   if (pathname.includes("/teacher") && !["admin", "teacher"].includes(profile.role)) {
-    return redirect(`/${lang}/dashboard`);
+    return redirect(`/${lang}/account/dashboard`);
   }
 
   return next();

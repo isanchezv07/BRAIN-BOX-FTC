@@ -18,7 +18,7 @@ const adminPath = `/${lang}/admin/dashboard`;
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
 
-if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/signin`);
+if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/auth/signin`);
 
 const supabaseAdmin = getSupabaseAdmin();
 
@@ -27,7 +27,7 @@ const { data: { session } } = await supabaseAdmin.auth.setSession({
   refresh_token: refreshToken.value,
 });
 
-if (!session) return Astro.redirect(`/${lang}/signin`);
+if (!session) return Astro.redirect(`/${lang}/auth/signin`);
 
 const { data: profile } = await supabaseAdmin
   .from("profiles")

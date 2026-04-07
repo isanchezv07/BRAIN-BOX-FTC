@@ -39,7 +39,7 @@ const { data: lesson } = await supabase
   .single();
 
 if (!lesson) {
-  return Astro.redirect(`/${lang}/dashboard`);
+  return Astro.redirect(`/${lang}/account/dashboard`);
 }
 
 const { data: allLessons } = await supabase

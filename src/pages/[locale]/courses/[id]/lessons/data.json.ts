@@ -30,10 +30,8 @@ export const GET: APIRoute = async ({ params, request }) => {
     
     let questions = [...rawQuiz.questions];
 
-    // 1. Mezclar preguntas
     questions = questions.sort(() => Math.random() - 0.5);
 
-    // 2. Mezclar respuestas (answers) manteniendo la correcta
     questions = questions.map(q => {
       const currentCorrectIdx = parseInt(q.correctAnswer) - 1;
       const correctText = q.answers[currentCorrectIdx];
@@ -43,7 +41,6 @@ export const GET: APIRoute = async ({ params, request }) => {
       return { ...q, answers: shuffledAnswers, correctAnswer: newCorrectAnswer };
     });
 
-    // 3. Aplicar límite
     const limit = lesson.quiz_questions_limit;
     if (limit && limit > 0) {
       questions = questions.slice(0, limit);
