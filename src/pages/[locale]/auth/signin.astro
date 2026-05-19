@@ -141,21 +141,25 @@ const error = Astro.url.searchParams.get("error");
 
 <script>
   const setupTabs = () => {
+    // Selectores de Tabs
     const tabPassword = document.getElementById('tab-password');
     const tabOtp = document.getElementById('tab-otp');
     const tabGoogle = document.getElementById('tab-google');
 
+    // Selectores de Secciones
     const sectionEmail = document.getElementById('section-email');
     const sectionPassword = document.getElementById('section-password');
     const sectionOtp = document.getElementById('section-otp');
     const sectionGoogle = document.getElementById('section-google');
     
+    // Selectores de Inputs y Botones
     const btnSubmit = document.getElementById('btn-submit');
     const inputEmail = document.getElementById('input-email') as HTMLInputElement;
     const inputPassword = document.getElementById('input-password') as HTMLInputElement;
     const inputOtp = document.getElementById('input-otp') as HTMLInputElement;
 
     const activateTab = (mode: 'password' | 'otp' | 'google') => {
+      // 1. Manejar estado visual de las pestañas
       [tabPassword, tabOtp, tabGoogle].forEach(tab => {
         tab?.classList.remove('bg-white/5', 'text-white', 'shadow-inner');
         tab?.classList.add('text-gray-600');
@@ -165,12 +169,14 @@ const error = Astro.url.searchParams.get("error");
       currentTab?.classList.add('bg-white/5', 'text-white', 'shadow-inner');
       currentTab?.classList.remove('text-gray-600');
 
+      // 2. Manejar visibilidad de secciones
       sectionEmail?.classList.toggle('hidden', mode === 'google');
       sectionPassword?.classList.toggle('hidden', mode !== 'password');
       sectionOtp?.classList.toggle('hidden', mode !== 'otp');
       sectionGoogle?.classList.toggle('hidden', mode !== 'google');
       btnSubmit?.classList.toggle('hidden', mode === 'google');
 
+      // 3. Manejar requerimientos de validación
       if (inputEmail) inputEmail.required = mode !== 'google';
       if (inputPassword) {
         inputPassword.required = mode === 'password';
@@ -187,6 +193,7 @@ const error = Astro.url.searchParams.get("error");
     tabGoogle?.addEventListener('click', () => activateTab('google'));
   };
 
+  // Inicializar al cargar y en transiciones de Astro
   setupTabs();
   document.addEventListener('astro:after-swap', setupTabs);
 </script>

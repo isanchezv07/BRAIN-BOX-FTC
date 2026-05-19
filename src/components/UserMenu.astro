@@ -1,7 +1,6 @@
 ---
 // @Isanchezv
 // src/components/UserMenu.astro
-import { supabase } from "@/lib/supabase";
 import { useTranslations } from "@/i18n/utils";
 import LanguagePicker from "./LanguagePicker.astro";
 const { pathname } = Astro.url;
@@ -45,6 +44,16 @@ const roleConfig = {
         name: 'ESTUDIANTE',
         style: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
         iconColor: 'bg-gray-500/20 text-gray-400'
+    },
+    partner: {
+        name: 'PARTNER',
+        style: 'bg-green-500/10 text-green-400 border-green-500/20',
+        iconColor: 'bg-green-500/20 text-green-400'
+    },
+    tester: {
+        name: 'TESTER',
+        style: 'bg-gray-500/10 text-white-400 border-gray-500/20',
+        iconColor: 'bg-gray-500/20 text-white-400'
     }
 };
 
@@ -52,22 +61,9 @@ const currentRole = profile?.role as keyof typeof roleConfig || 'student';
 const badgeClass = roleConfig[currentRole].style;
 const displayRole = roleConfig[currentRole].name;
 
+// Stats removed for performance - can be added back via client-side fetch if needed
 let totalPublishedCourses = 0;
 let completedCoursesCount = 0;
-
-if (profile?.id) {
-  const { data: userProgress } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", profile.id).eq("completed", true);
-  const completedLessonIds = new Set(userProgress?.map(p => p.lesson_id) || []);
-  const { data: courses } = await supabase.from("courses").select("id, lessons(id)").eq("is_published", true);
-
-  if (courses) {
-    totalPublishedCourses = courses.length;
-    completedCoursesCount = courses.filter(course => {
-      const lessons = course.lessons || [];
-      return lessons.length > 0 && lessons.every(l => completedLessonIds.has(l.id));
-    }).length;
-  }
-}
 
 const isStaff = ['admin' , 'mod'].includes(currentRole);
 ---
@@ -222,6 +218,24 @@ const isStaff = ['admin' , 'mod'].includes(currentRole);
               </svg>
           </span>
           {t('userMenu.links.playground')}
+        </a>
+      )}
+
+      {(currentRole === "partner" || isStaff) && (
+        <a href={`/${lang}/partner/dashboard`} class="flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-green-500 hover:bg-green-500/5 rounded-2xl transition-all uppercase tracking-widest group">
+          <span class="p-2 rounded-xl bg-green-500/10 group-hover:bg-green-500/20 transition-all shadow-inner">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
+          </span>
+          {t('userMenu.links.partnerDashboard')}
+        </a>
+      )}
+
+      {(currentRole === "tester" || isStaff) && (
+        <a href={`/${lang}/tester/dashboard`} class="flex items-center gap-3 px-4 py-3 text-[11px] font-bold text-white-500 hover:bg-gray-500/5 rounded-2xl transition-all uppercase tracking-widest group">
+          <span class="p-2 rounded-xl bg-gray-500/10 group-hover:bg-gray-500/20 transition-all shadow-inner">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
+          </span>
+          {t('userMenu.links.testerDashboard')}
         </a>
       )}
 

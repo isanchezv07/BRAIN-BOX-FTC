@@ -1,10 +1,10 @@
 // @Isanchezv
 // src/pages/api/auth/google.ts
 import type { APIRoute } from "astro";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
-  const supabase = getSupabaseAdmin();
+  const supabase = supabaseAdmin;
   const url = new URL(request.url);
   
   const referer = request.headers.get("referer") || "";
@@ -25,5 +25,5 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     return redirect(`/${lang}/signin?error=${encodeURIComponent(error.message)}`);
   }
 
-  return redirect(data.url);
+  return redirect(data.url); 
 };

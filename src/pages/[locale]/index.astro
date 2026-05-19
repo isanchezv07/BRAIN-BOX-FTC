@@ -2,49 +2,22 @@
 // @Isanchezv
 // src/pages/[locale]/index.astro
 import Layout from "@/layouts/Layout.astro";
-import { supabase } from "@/lib/supabase";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { getFilteredCourses, getCompletedCoursesIds } from "@/lib/courses";
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-const accessToken = Astro.cookies.get("sb-access-token");
-const refreshToken = Astro.cookies.get("sb-refresh-token");
-let userId = null;
+const { user, profile } = Astro.locals;
 
-if (accessToken && refreshToken) {
-  const { data: { user } } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-  userId = user?.id;
-}
-
-const { data: coursesData } = await supabase
-  .from("courses")
-  .select(`id, title,
-    description, level,
-    created_at, 
-    lessons (id),
-    categories (name)`)
-  .eq("is_published", true)
-  .order("created_at", { ascending: false });
-
-let completedCoursesIds = new Set();
-if (userId && coursesData) {
-  const { data: progress } = await supabase
-    .from("lesson_progress")
-    .select("lesson_id")
-    .eq("user_id", userId)
-    .eq("completed", true);
-
-  const completedLessonIds = new Set(progress?.map(p => p.lesson_id));
-  coursesData.forEach(course => {
-    const total = course.lessons?.length || 0;
-    if (!total) return;
-    const completed = course.lessons.filter(l => completedLessonIds.has(l.id)).length;
-    if (completed === total) completedCoursesIds.add(course.id);
-  });
+const coursesData = await getFilteredCourses(profile?.role || 'student');
+let completedCoursesIds = new Set<string>();
+if (user) {
+  completedCoursesIds = await getCompletedCoursesIds(user.id, coursesData);
 }
 
 const workflowSteps = [
@@ -72,7 +45,7 @@ const workflowSteps = [
 ];
 ---
 
-<Layout title={t("index.title")}>
+<Layout title={t("index.title")} description={t("site.description")}>
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
   <main class="bg-[#030303] text-white selection:bg-blue-600/50 font-sans antialiased relative overflow-x-hidden">
@@ -88,7 +61,7 @@ const workflowSteps = [
                 <span class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_12px_#3b82f6]"></span>
                 
                 <span class="text-[9px] md:text-[10px] font-extrabold text-blue-500 uppercase tracking-wider md:tracking-wide whitespace-nowrap">
-                BRAIN BOX FTC <span class="opacity-40 mx-2">//</span> v2.1.0
+                BRAIN BOX FTC <span class="opacity-40 mx-2">//</span> v2.1.1
                 </span>
                 
                 <span class="text-[9px] md:text-[10px] font-extrabold text-blue-400 uppercase tracking-wider md:tracking-wide whitespace-nowrap">

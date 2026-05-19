@@ -1,14 +1,22 @@
 // @Isanchezv
 // src/middleware.ts
 import { defineMiddleware } from "astro:middleware";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getCachedProfile, clearSession } from "@/lib/auth-session";
 
-export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
+  const { url, cookies, redirect, locals } = context;
   const pathname = url.pathname;
+
+  locals.user = null;
+  locals.profile = null;
 
   const isPublicRoute =
     pathname === "/" ||
-    pathname.match(/^\/(es|en|pt)$/) ||
+    pathname.match(/^\/(es|en)$/) ||
+    pathname === "/sitemap-index.xml" ||
+    pathname === "/sitemap-0.xml" ||
+    pathname === "/robots.txt" ||
     pathname.includes("/auth/signin") ||
     pathname.includes("/auth/register") ||
     pathname.includes("/auth/forgot-password") ||
@@ -17,6 +25,7 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
     pathname.includes("/auth/verify-email") ||
     pathname.includes("/callback") ||
     pathname.includes("/api/auth/") ||
+    pathname.includes("/api/stripe/") ||
     pathname.includes("/legal/terms") ||
     pathname.includes("/legal/privacy") ||
     pathname.includes("/docs") ||
@@ -29,69 +38,64 @@ export const onRequest = defineMiddleware(async ({ url, cookies, redirect }, nex
     pathname.includes("/alliance/") || 
     pathname.includes("/account/banned");
 
-  if (isPublicRoute) return next();
-
-  const lang = pathname.split("/")[1] || "es";
-
   const accessToken = cookies.get("sb-access-token")?.value;
 
+  const lang = pathname.split("/")[1] || "es";
   if (!accessToken) {
+    if (isPublicRoute) return next();
     return redirect(`/${lang}/auth/signin`);
   }
 
-  const supabaseAdmin = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { persistSession: false } }
-  );
+  try {
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseAdmin.auth.getUser(accessToken);
+    if (authError || !user) {
+      throw new Error("Invalid session");
+    }
 
-  if (authError || !user) {
-    cookies.delete("sb-access-token", { path: "/" });
-    cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/auth/signin`);
-  }
+    locals.user = user;
 
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("role, status, ban_until") 
-    .eq("id", user.id)
-    .single();
+    const profile = await getCachedProfile(cookies, user.id);
 
-  if (profileError || !profile) {
-    cookies.delete("sb-access-token", { path: "/" });
-    cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/auth/signin`);
-  }
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
 
-  if (profile.status === "perma-ban") {
-    cookies.delete("sb-access-token", { path: "/" });
-    cookies.delete("sb-refresh-token", { path: "/" });
-    return redirect(`/${lang}/account/banned`); 
-  }
+    locals.profile = profile;
 
-  if (profile.status === "temporal-ban") {
-    cookies.delete("sb-access-token", { path: "/" });
-    cookies.delete("sb-refresh-token", { path: "/" });
+    if (profile.status === "perma-ban") {
+      clearSession(cookies);
+      return redirect(`/${lang}/account/banned`);
+    }
 
-    const untilParam = profile.ban_until ? `?until=${encodeURIComponent(profile.ban_until)}` : "";
-    return redirect(`/${lang}/account/banned${untilParam}`);
-  }
+    if (profile.status === "temporal-ban") {
+      const now = new Date();
+      const banUntil = profile.ban_until ? new Date(profile.ban_until) : null;
+      
+      if (!banUntil || banUntil > now) {
+        clearSession(cookies);
+        const untilParam = profile.ban_until ? `?until=${encodeURIComponent(profile.ban_until)}` : "";
+        return redirect(`/${lang}/account/banned${untilParam}`);
+      }
+    }
 
-  if (pathname.includes("/admin") && profile.role !== "admin") {
-    return redirect(`/${lang}/account/dashboard`);
-  }
+    if (pathname.includes("/admin") && profile.role !== "admin") {
+      return redirect(`/${lang}/account/dashboard`);
+    }
 
-  if (pathname.includes("/mod") && !["admin", "mod"].includes(profile.role)) {
-    return redirect(`/${lang}/account/dashboard`);
-  }
+    if (pathname.includes("/mod") && !["admin", "mod"].includes(profile.role)) {
+      return redirect(`/${lang}/account/dashboard`);
+    }
 
-  if (pathname.includes("/teacher") && !["admin", "teacher"].includes(profile.role)) {
-    return redirect(`/${lang}/account/dashboard`);
+    if (pathname.includes("/teacher") && !["admin", "teacher"].includes(profile.role)) {
+      return redirect(`/${lang}/account/dashboard`);
+    }
+
+  } catch (error) {
+    if (!isPublicRoute) {
+      clearSession(cookies);
+      return redirect(`/${lang}/auth/signin`);
+    }
   }
 
   return next();

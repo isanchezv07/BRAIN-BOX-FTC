@@ -2,178 +2,30 @@
 // @Isanchezv
 // src/pages/[locale]/admin/dashboard.astro
 import Layout from "@/layouts/Layout.astro";
-import { supabase, getSupabaseAdmin } from "@/lib/supabase"; 
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { handleAdminAction, getAdminDashboardData, calculateAdminStats } from "@/lib/admin";
 
 import UserManagement from "@/components/admin/UserManagement.astro";
 import CategoryManager from "@/components/admin/CategoryManager.astro";
 import CourseManager from "@/components/admin/CourseManager.astro";
 import LessonManager from "@/components/admin/LessonManager.astro";
 import ViewLogs from "@/components/admin/ViewLogs.astro";
+import SubscriptionManager from "@/components/admin/SubscriptionManager.astro";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const adminPath = `/${lang}/admin/dashboard`;
 
-const accessToken = Astro.cookies.get("sb-access-token");
-const refreshToken = Astro.cookies.get("sb-refresh-token");
+const { user, profile } = Astro.locals;
 
-if (!accessToken || !refreshToken) return Astro.redirect(`/${lang}/auth/signin`);
-
-const supabaseAdmin = getSupabaseAdmin();
-
-const { data: { session } } = await supabaseAdmin.auth.setSession({
-  access_token: accessToken.value, 
-  refresh_token: refreshToken.value,
-});
-
-if (!session) return Astro.redirect(`/${lang}/auth/signin`);
-
-const { data: profile } = await supabaseAdmin
-  .from("profiles")
-  .select("role")
-  .eq("id", session.user.id)
-  .single();
-
-if (profile?.role !== "admin") return Astro.redirect(`/${lang}/dashboard`);
-
-const { data: auditData } = await supabaseAdmin
-  .from("audit_logs")
-  .select(`
-    *,
-    profiles:target_user_id(username),
-    mod:moderator_id(username)
-  `)
-  .order('created_at', { ascending: false });
-
-const isAdmin = profile.role === "admin";
+if (!user || profile?.role !== "admin") {
+  return Astro.redirect(`/${lang}/auth/signin`);
+}
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const action = form.get("_action");
-  const id = form.get("id");
-
-  const hasCertificate = form.get("has_certificate") === "on";
-
-  try {
-    switch (action) {
-      case "update-user-status":
-        const newStatus = form.get("status")?.toString() || "active";
-        let banUntil = null;
-
-        if (newStatus === "temporal-ban") {
-          const minutes = parseInt(
-            form.get("ban_duration_custom")?.toString() || "60"
-          );
-          banUntil = new Date(Date.now() + minutes * 60000).toISOString();
-        }
-
-        await supabaseAdmin
-          .from("profiles")
-          .update({ status: newStatus, ban_until: banUntil })
-          .eq("id", id);
-
-        if (newStatus.includes("ban")) {
-          await supabaseAdmin.auth.admin.signOut(id);
-        }
-
-        return Astro.redirect(`${adminPath}?tab=users`);
-      case "update-profile-role":
-        await supabaseAdmin.from("profiles").update({ role: form.get("role") }).eq("id", id);
-        break;
-
-      case "update-course":
-        const requiredRoles = form.getAll("required_roles");
-        
-        await supabaseAdmin.from("courses").update({ 
-          title: form.get("title"), 
-          description: form.get("description"),
-          category_id: form.get("category_id"), 
-          level: form.get("level"),
-          team: form.get("team"),
-          has_certificate: hasCertificate,
-          required_role: requiredRoles && requiredRoles.length > 0 ? JSON.stringify(requiredRoles) : null
-        }).eq("id", id);
-        return Astro.redirect(`${adminPath}?tab=courses`);
-
-      case "update-lesson":
-        console.log("DEBUG: Update lesson form data received");
-        const quizId = form.get("quiz_id");
-        const rawLimit = form.get("quiz_questions_limit");
-        const quizLimit = rawLimit && rawLimit.toString().trim() !== "" ? Number(rawLimit) : null;
-        
-        console.log("DEBUG: quizId:", quizId);
-        console.log("DEBUG: rawLimit:", rawLimit, "quizLimit:", quizLimit);
-        console.log("DEBUG: quiz_timer_enabled:", form.get("quiz_timer_enabled"));
-        console.log("DEBUG: quiz_timer_seconds:", form.get("quiz_timer_seconds"));
-        
-        const lData = { 
-          course_id: form.get("course_id"), title: form.get("title"), content: form.get("content"), 
-          order_index: Number(form.get("order_index")), is_free: form.get("is_free") === "true",
-          quiz_data: quizId && quizId.toString().trim() !== "" ? `${quizId.toString()}.json` : null,
-          quiz_timer_enabled: form.get("quiz_timer_enabled") === "true",
-          quiz_timer_seconds: Number(form.get("quiz_timer_seconds") || 30),
-          quiz_questions_limit: quizLimit
-        };
-        
-        console.log("DEBUG: Final lesson data to update:", lData);
-        
-        const { error: updateError } = await supabaseAdmin.from("lessons").update(lData).eq("id", id);
-        console.log("DEBUG: Update error:", updateError);
-        
-        return Astro.redirect(`${adminPath}?course=${form.get("course_id")}&tab=courses`);
-
-      case "create-course":
-        const createRequiredRoles = form.getAll("required_roles");
-        
-        const { data: nc } = await supabaseAdmin.from("courses").insert({ 
-          title: form.get("title"), 
-          description: form.get("description"),
-          category_id: form.get("category_id"), 
-          level: form.get("level"), 
-          team: form.get("team"),
-          has_certificate: hasCertificate,
-          required_role: createRequiredRoles && createRequiredRoles.length > 0 ? JSON.stringify(createRequiredRoles) : null,
-          created_by: session.user.id 
-        }).select().single();
-        if (nc) return Astro.redirect(`${adminPath}?course=${nc.id}&tab=courses`);
-        break;
-
-      case "create-lesson":
-        await supabaseAdmin.from("lessons").insert({
-          course_id: form.get("course_id"), title: form.get("title"), content: form.get("content"),
-          order_index: Number(form.get("order_index")), is_free: form.get("is_free") === "true"
-        });
-        return Astro.redirect(`${adminPath}?course=${form.get("course_id")}&tab=courses`);
-
-      case "delete-course":
-        await supabaseAdmin.from("courses").delete().eq("id", id);
-        return Astro.redirect(`${adminPath}?tab=courses`);
-      
-      case "delete-lesson":
-        await supabaseAdmin.from("lessons").delete().eq("id", id);
-        break;
-
-      case "upsert-category":
-        const catData = { name: form.get("name"), description: form.get("description") };
-        id ? await supabaseAdmin.from("categories").update(catData).eq("id", id) : await supabaseAdmin.from("categories").insert(catData);
-        return Astro.redirect(`${adminPath}?tab=categories`);
-      
-      case "delete-category":
-        await supabaseAdmin.from("categories").delete().eq("id", id);
-        return Astro.redirect(`${adminPath}?tab=categories`);
-
-      case "publish-course":
-        await supabaseAdmin.from("courses").update({ is_published: true }).eq("id", id);
-        return Astro.redirect(`${adminPath}?tab=courses`);
-
-      case "unpublish-course":
-        await supabaseAdmin.from("courses").update({ is_published: false }).eq("id", id);
-        return Astro.redirect(`${adminPath}?tab=courses`);
-    }
-  } catch (e) { 
-    console.error("Error en acción Admin:", e);
-  }
+  const result = await handleAdminAction(form, user.id, lang);
+  if (result?.redirect) return Astro.redirect(result.redirect);
 }
 
 const urlParams = new URLSearchParams(Astro.url.search);
@@ -181,44 +33,13 @@ const selectedCourseId = urlParams.get("course");
 const editCourseId = urlParams.get("editCourse");
 const editLessonId = urlParams.get("edit");
 
-const [{ data: profiles }, { data: categories }, { data: courses }] = await Promise.all([
-  supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
-  supabaseAdmin.from("categories").select("*").order("name"),
-  supabaseAdmin.from("courses").select("*, categories(name)").order("created_at", { ascending: false })
-]);
+const { profiles, categories, courses, auditData, lessons } = await getAdminDashboardData(selectedCourseId);
+const { userGrowthData, firstStats, topCountries } = calculateAdminStats(profiles);
 
-const courseToEdit = editCourseId ? courses?.find(c => c.id === editCourseId) : null;
-let lessons = [];
-if (selectedCourseId) {
-  const { data } = await supabaseAdmin.from("lessons").select("*").eq("course_id", selectedCourseId).order("order_index");
-  lessons = data || [];
-}
+const courseToEdit = editCourseId ? courses.find(c => c.id === editCourseId) : null;
 const lessonToEdit = editLessonId ? lessons.find(l => l.id === editLessonId) : null;
-
+const isAdmin = profile.role === "admin";
 const months = t('admin.months');
-const userGrowthData = new Array(12).fill(0);
-const firstStats = { FLL: 0, FTC: 0, FRC: 0 };
-const countryCounts: Record<string, number> = {};
-
-const bannedCount = profiles?.filter(p => p.status === 'perma-ban' || p.status === 'banned').length || 0;
-const tempBannedCount = profiles?.filter(p => p.status === 'temporal-ban').length || 0;
-
-profiles?.forEach(p => {
-    const m = new Date(p.created_at).getMonth();
-    userGrowthData[m]++;
-    if (p.first_categories && Array.isArray(p.first_categories)) {
-        p.first_categories.forEach((cat) => {
-            if (cat in firstStats) firstStats[cat as keyof typeof firstStats]++;
-        });
-    }
-    if (p.country) {
-        countryCounts[p.country] = (countryCounts[p.country] || 0) + 1;
-    }
-});
-
-const topCountries = Object.entries(countryCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
 ---
 <Layout title={t('admin.dashboard.title')}>
   <div class="flex h-screen bg-[#050505] overflow-hidden text-white font-sans relative">
@@ -237,6 +58,10 @@ const topCountries = Object.entries(countryCounts)
         <button data-tab-target="users" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           {t('admin.nav.users')}
+        </button>
+        <button data-tab-target="subscriptions" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Suscripciones
         </button>
         <button data-tab-target="categories" class="nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[12px] font-bold uppercase transition-all">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
@@ -317,6 +142,10 @@ const topCountries = Object.entries(countryCounts)
 
         <div id="tab-users" class="tab-pane hidden">
             <UserManagement profiles={profiles} lang={lang} />
+        </div>
+
+        <div id="tab-subscriptions" class="tab-pane hidden">
+            <SubscriptionManager />
         </div>
 
         <div id="tab-categories" class="tab-pane hidden">

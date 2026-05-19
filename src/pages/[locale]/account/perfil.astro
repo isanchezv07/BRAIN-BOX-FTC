@@ -3,13 +3,16 @@
 // src/pages/[locale]/account/perfil.astro
 import Layout from "@/layouts/Layout.astro";
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { Filter } from 'glin-profanity';
+import { setProfileCookie } from "@/lib/auth-session";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-const { data: { user } } = await supabase.auth.getUser();
+const { user, profile: cachedProfile } = Astro.locals;
+
 if (!user) return Astro.redirect(`/${lang}/auth/signin`);
 
 const profanityFilter = new Filter({
@@ -59,11 +62,22 @@ if (Astro.request.method === "POST") {
     updateData.avatar_url = avatar_url;
   }
   
-  const { error: updateError } = await supabase.from("profiles").update(updateData).eq("id", user.id);
-  if (updateError) console.error("Error al actualizar perfil:", updateError.message);
+  const { data: updatedProfile, error: updateError } = await supabaseAdmin
+    .from("profiles")
+    .update(updateData)
+    .eq("id", user.id)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("Error al actualizar perfil:", updateError.message);
+  } else if (updatedProfile) {
+    setProfileCookie(Astro.cookies, updatedProfile);
+    return Astro.redirect(Astro.url.pathname);
+  }
 }
 
-const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+const profile = cachedProfile;
 const { data: courses } = await supabase.from("courses").select("id, lessons(id)").eq("is_published", true);
 const { data: progress } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id).eq("completed", true);
 
@@ -274,7 +288,6 @@ const tourData = {
     const hiddenInput = document.getElementById('country-hidden');
     const options = document.querySelectorAll('.country-option');
 
-    // País Search
     searchInput?.addEventListener('focus', () => countryList?.classList.remove('hidden'));
     document.addEventListener('click', (e) => { 
         if (!searchInput?.contains(e.target) && !countryList?.contains(e.target)) countryList?.classList.add('hidden'); 
@@ -291,7 +304,6 @@ const tourData = {
         countryList?.classList.add('hidden');
     }));
     
-    // Avatar Preview
     const avatarInput = document.getElementById('avatar-input');
     avatarInput?.addEventListener('change', (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -347,7 +359,6 @@ const tourData = {
     replayBtn.onclick = () => d.drive();
   }
 
-  // Ejecución
   function run() {
     initProfileLogic();
     initTour();

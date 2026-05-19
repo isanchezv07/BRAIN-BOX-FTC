@@ -1,7 +1,13 @@
 ---
 // @Isanchezv
 // src/pages/[locale]/playground/index.astro
-import WorkInProgress from "@/components/WorkInProgress.astro";
+import Layout from "@/layouts/Layout.astro";
+import FTCSimulator from "@/components/playground/FTCSimulator";
 ---
 
-<WorkInProgress />
+<Layout title="FTC Simulator">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-white">FTC Playground</h1>
+        <FTCSimulator client:load />
+    </div>
+</Layout>

@@ -1,0 +1,158 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { supabase } from "@/lib/supabase";
+
+const { locale } = Astro.params;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { data: { user } } = await supabase.auth.getUser();
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("subscription_plan")
+  .eq("id", user?.id)
+  .single();
+
+const hasActivePlan = !!profile?.subscription_plan && profile.subscription_plan !== "free";
+
+const packages = [
+  {
+    id: "prod_UIkBvj0Xy5XV5V",
+    name: "Plan Rookie",
+    credits: 5,
+    extra: "+3 base = 8 total/mes",
+    price: "4.99",
+    priceId: "price_1TK8hPEO5j3viIZ6qlS1wLkZ", 
+    description: "Para equipos que analizan su progreso semanalmente.",
+    features: ["5 Créditos Extra/mes", "Análisis de IA", "PDFs de Feedback", "Soporte Estándar"]
+  },
+  {
+    id: "prod_UIkCACSFAOw86l",
+    name: "Plan Pro",
+    credits: 10,
+    extra: "+3 base = 13 total/mes",
+    price: "8.99",
+    priceId: "price_1TK8iPEO5j3viIZ6h5MWaOwK", 
+    description: "Ideal para equipos en competencia activa.",
+    features: ["10 Créditos Extra/mes", "Análisis Prioritario", "Acceso a nuevas Rúbricas", "Soporte 24/7"],
+    popular: true
+  },
+  {
+    id: "prod_UIkDq4szJTfqv8",
+    name: "Plan Plus",
+    credits: 20,
+    extra: "+3 base = 23 total/mes",
+    price: "14.99",
+    priceId: "price_1TK8ivEO5j3viIZ68Gp2S4hr", 
+    description: "Máximo rendimiento para equipos de alto impacto.",
+    features: ["20 Créditos Extra/mes", "Consultoría Técnica IA", "Reportes Detallados", "Beta Tester"]
+  }
+];
+---
+
+<Layout title={t('credits.title') + " " + t('credits.highlight')}>
+  <main class="min-h-screen bg-[#050505] py-24 px-6 relative overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-blue-600/20 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/10 blur-[100px] pointer-events-none"></div>
+
+    <a href={`/${lang}/account/dashboard`} class="ml-40 inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+      <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </div>
+      {t('buttons.back')}
+    </a>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <header class="text-center mb-20">
+        <h1 class="text-6xl md:text-7xl font-black italic text-white uppercase leading-tight mb-4">
+          {t('credits.title')} <span class="text-blue-500">{t('credits.highlight')}</span>
+        </h1>
+        <p class="text-gray-500 font-bold uppercase tracking-[0.3em] text-sm">
+          {t('credits.subtitle')}
+        </p>
+        
+        <div class="mt-8">
+          <a href={`/${lang}/shop/membership`} class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest text-[10px] bg-blue-500/5 border border-blue-500/20 px-4 py-2 rounded-full transition-all hover:bg-blue-500/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            {t('credits.learn_more')}
+          </a>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {packages.map((pkg) => (
+          <div class={`relative group bg-gradient-to-b from-white/10 to-transparent border ${pkg.popular ? 'border-blue-500 shadow-[0_0_50px_rgba(37,99,235,0.15)]' : 'border-white/5'} rounded-[3rem] p-10 transition-all hover:border-white/20 flex flex-col h-full backdrop-blur-sm`}>
+            {pkg.popular && (
+              <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-blue-600 text-white font-black italic uppercase text-[10px] px-6 py-2 rounded-full tracking-widest shadow-lg shadow-blue-600/20">
+                {t('credits.recommended')}
+              </div>
+            )}
+            
+            <div class="mb-8">
+              <h3 class="text-2xl font-black italic text-white uppercase mb-2">{pkg.name}</h3>
+              <p class="text-gray-400 text-xs italic">{pkg.description}</p>
+            </div>
+
+            <div class="mb-8">
+              <div class="flex items-baseline gap-2">
+                <span class="text-5xl font-black text-white italic">${pkg.price}</span>
+                <span class="text-blue-500 font-black text-sm italic">{t('credits.currency')}</span>
+              </div>
+              <p class="text-gray-500 text-[10px] font-bold uppercase mt-1 tracking-widest">/ {t('credits.monthly')}</p>
+            </div>
+
+            <div class="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-6 mb-8 text-center group-hover:bg-blue-500/10 transition-colors">
+              <span class="text-4xl font-black text-blue-500 italic">{pkg.credits}</span>
+              <p class="text-blue-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">{pkg.extra}</p>
+            </div>
+
+            <ul class="space-y-4 mb-10 flex-grow">
+              {pkg.features.map(feature => (
+                <li class="flex items-center gap-3 text-[11px] text-gray-300 font-bold uppercase tracking-wider italic">
+                  <div class="bg-blue-500/20 p-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M20 6 9 17l-5-5"/></svg>
+                  </div>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <form action={hasActivePlan ? "/api/stripe/portal" : "/api/stripe/checkout"} method="POST" data-astro-reload>
+              <input type="hidden" name="priceId" value={pkg.priceId} />
+              <input type="hidden" name="plan" value={pkg.id} />
+              <input type="hidden" name="lang" value={lang} />
+              <button type="submit" class={`w-full py-5 rounded-2xl font-black uppercase text-xs transition-all tracking-[0.3em] italic shadow-lg ${hasActivePlan ? 'bg-white/5 text-white border border-white/10 hover:bg-white/20' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20 active:scale-95'}`}>
+                {!user ? t('credits.login') : (hasActivePlan ? t('credits.manage') : t('credits.subscribe'))}
+              </button>
+            </form>
+
+          </div>
+        ))}
+      </div>
+
+      <footer class="mt-24 text-center">
+        <p class="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em] max-w-2xl mx-auto leading-relaxed opacity-50">
+          {t('credits.footer_info')}
+        </p>
+      </footer>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  window.addEventListener('focus', () => {
+    const lastAction = sessionStorage.getItem('stripe_action_pending');
+    if (lastAction) {
+      sessionStorage.removeItem('stripe_action_pending');
+      window.location.reload();
+    }
+  });
+
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', () => {
+      sessionStorage.setItem('stripe_action_pending', 'true');
+    });
+  });
+</script>

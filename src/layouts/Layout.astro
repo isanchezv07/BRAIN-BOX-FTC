@@ -3,67 +3,50 @@
 // src/layouts/Layout.astro
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import SpeedInsights from "@vercel/speed-insights/astro";
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 import Analytics from "@vercel/analytics/astro";
 import LanguagePicker from "@/components/LanguagePicker.astro";
 import { supabase } from "@/lib/supabase";
 import UserMenu from "@/components/UserMenu.astro";
 import BaseHead from "@/components/BaseHead.astro";
+import Suppport from "@/pages/[locale]/support.astro"
 import "../styles/global.css";
 
-const { title = "BRAIN BOX FTC" } = Astro.props;
+const { title = "BRAIN BOX FTC", description } = Astro.props;
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
+// SEO: Allow search engines to see the content even if locked
+const userAgent = Astro.request.headers.get('user-agent') || '';
+const isBot = /googlebot|bingbot|yandexbot|baiduspider|slurp|duckduckbot|lighthouse/i.test(userAgent);
+
 const TARGET_DATE = "2026-02-25T18:00:00";
+const isLockedByDate = new Date() < new Date(TARGET_DATE);
+const showLock = isLockedByDate && !isBot;
 
-const accessToken = Astro.cookies.get("sb-access-token");
-const refreshToken = Astro.cookies.get("sb-refresh-token");
-
-let user = null;
-let profile = null;
-let userEmail = "";
-let userName = "";
-
-if (accessToken && refreshToken) {
-  const { data: sessionData } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-
-  user = sessionData.session?.user;
-
-  if (user) {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    profile = profileData;
-    userEmail = user.email || "";
-    userName = profile?.full_name || profile?.username || "Estudiante";
-  }
-}
+// Obtener datos de locals (ya procesados por el middleware)
+const { user, profile } = Astro.locals;
+const userEmail = user?.email || "";
+const userName = profile?.full_name || profile?.username || "Estudiante";
 ---
 
 <html lang={lang}>
   <head>
     <BaseHead
       title={title}
+      description={description}
     />
-    <ViewTransitions />
+    <ClientRouter />
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
   </head>
-
   <body
     x-data={`{
       mobileMenuOpen: false,
       scrollY: 0,
-      isLocked: true,
+      isLocked: ${showLock},
       target: new Date('${TARGET_DATE}').getTime(),
       days: '00', hours: '00', minutes: '00', seconds: '00',
       
@@ -307,80 +290,71 @@ if (accessToken && refreshToken) {
       <slot />
     </main>
 
-    <footer class="relative bg-[#070707] border-t border-white/5 pt-24 pb-10 px-6 overflow-hidden">
-  
+    <footer class="relative bg-[#070707] border-t border-white/5 pt-20 pb-10 px-6 overflow-hidden">
+
+      <!-- glow -->
       <div class="absolute inset-x-0 -top-32 h-64 bg-linear-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 blur-3xl pointer-events-none" />
     
       <div class="relative max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
-
-          <div class="sm:col-span-2 lg:col-span-1">
+    
+        <!-- GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 mb-16">
+    
+          <!-- BRAND -->
+          <div class="lg:col-span-1">
             <span class="text-2xl font-black italic tracking-tighter mb-6 block 
               bg-linear-to-r from-white via-blue-400 to-cyan-400 
               bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(59,130,246,0.25)]">
-                BRAIN BOX FTC
+              BRAIN BOX FTC
             </span>
-    
-            <p class="text-xs text-gray-500 leading-relaxed max-w-xs tracking-tight">
-              {t('footer.brandDescription')}
-            </p>
           </div>
     
+          <!-- ACADEMY -->
           <div>
-            <h4 class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-8 italic">
+            <h4 class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6 italic">
               // {t('footer.academy.title')}
             </h4>
-            <ul class="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-gray-600">
-              <li>
-                <a href={`/${lang}/explore`}  class="footer-link">
-                  {t("footer.academy.courses")}
-                </a>
-              </li>
-              <li>
-                <a href={`/${lang}/resources`}class="footer-link">
-                  {t("footer.academy.resources")}
-                </a>
-              </li>
+    
+            <ul class="flex flex-col gap-3 text-[11px] font-bold uppercase tracking-widest text-gray-600">
+              <li><a href={`/${lang}/explore`} class="footer-link">Courses</a></li>
+              <li><a href={`/${lang}/resources`} class="footer-link">Resources</a></li>
+              <li><a href={`/${lang}/docs`} class="footer-link">Docs</a></li>
             </ul>
           </div>
     
+          <!-- PLATFORM -->
           <div>
-            <ul class="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-gray-600">
-              <li>
-                <a href={`/${lang}/docs`}class="footer-link">
-                  {t("footer.academy.docs")}
-                </a>
-              </li>
-              <li>
-                <a href={`/${lang}/legal/privacy`}class="footer-link">
-                  {t("footer.academy.privacy")}
-                </a>
-              </li>
-              <li>
-                <a href={`/${lang}/legal/terms`}class="footer-link">
-                  {t("footer.academy.terms")}
-                </a>
-              </li>
-              <li>
-                <a href="https://status-brain-box-ftc.vercel.app" class="footer-link">
-                  Status
-                </a>
-              </li>
-              <li>
-                <a href={`/${lang}/scout`} class="footer-link">
-                  Scout
-                </a>
-              </li>
+            <h4 class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6 italic">
+              // PLATFORM
+            </h4>
+    
+            <ul class="flex flex-col gap-3 text-[11px] font-bold uppercase tracking-widest text-gray-600">
+              <li><a href={`/${lang}/scout`} class="footer-link">Scout</a></li>
+              <li><a href={`/${lang}/support`} class="footer-link">Support</a></li>
+              <li><a href="https://status-brain-box-ftc.vercel.app" class="footer-link">Status</a></li>
             </ul>
           </div>
     
-          <div class="flex flex-col items-start lg:items-end">
-            <div class="bg-white/2.5 border border-white/10 p-5 rounded-3xl w-full lg:w-auto backdrop-blur-md
-              shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+          <!-- LEGAL -->
+          <div>
+            <h4 class="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-6 italic">
+              // LEGAL
+            </h4>
+    
+            <ul class="flex flex-col gap-3 text-[11px] font-bold uppercase tracking-widest text-gray-600">
+              <li><a href={`/${lang}/legal/privacy`} class="footer-link">Privacy</a></li>
+              <li><a href={`/${lang}/legal/terms`} class="footer-link">Terms</a></li>
+            </ul>
+          </div>
+    
+          <!-- STATUS -->
+          <div class="flex items-start">
+            <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md
+              shadow-[0_0_30px_rgba(0,0,0,0.3)] w-full">
     
               <div class="flex items-center gap-3 mb-3">
                 <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse 
-                  shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
+                  shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
                 <span class="text-[9px] font-black uppercase tracking-widest text-white">
                   {t('footer.system.status')}
                 </span>
@@ -403,16 +377,20 @@ if (accessToken && refreshToken) {
           </div>
         </div>
     
-        <div class="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-white/5 gap-6">
+        <!-- BOTTOM BAR -->
+        <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/5 gap-4">
+    
           <p class="text-[10px] text-gray-700 font-black uppercase tracking-[0.4em] text-center md:text-left">
             &copy; {new Date().getFullYear()} BRAIN BOX FTC
             <span class="hidden sm:inline"> — All rights reserved</span>
           </p>
     
-          <div class="flex items-center gap-8 text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
-            <span class="text-blue-900/60 italic">Build_v2.0.27</span>
+          <div class="flex items-center gap-6 text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
+            <span class="text-blue-900/60 italic">Build_v2.1.1</span>
           </div>
+    
         </div>
+    
       </div>
     </footer>
 
@@ -427,6 +405,7 @@ if (accessToken && refreshToken) {
         touch-action: manipulation;
       }
 
+      /* PAGE LOADER STYLES */
       .page-loader {
         position: fixed;
         inset: 0;
@@ -581,8 +560,7 @@ if (accessToken && refreshToken) {
 </html>
 
 <script>
-  import { supabase } from "@/lib/supabase";
-
+  // --- LOADER LOGIC FOR VIEW TRANSITIONS ---
   const handleBeforePreparation = () => {
     const loader = document.getElementById('page-loader');
     if (loader) loader.classList.remove('hidden');
@@ -593,38 +571,7 @@ if (accessToken && refreshToken) {
     if (loader) loader.classList.add('hidden');
   };
 
+  // Listeners para el ciclo de vida de Astro View Transitions
   document.addEventListener('astro:before-preparation', handleBeforePreparation);
   document.addEventListener('astro:page-load', handlePageLoad);
-
-  async function forceSecurityCheck() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('status, ban_until')
-      .eq('id', session.user.id)
-      .single();
-
-    if (profile && profile.status !== 'active') {
-      const now = new Date();
-      const banUntil = profile.ban_until ? new Date(profile.ban_until) : null;
-
-      if (!banUntil || new Date(banUntil) > now) {
-        await supabase.auth.signOut();
-        
-        document.cookie = "sb-access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-        document.cookie = "sb-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-
-        const lang = window.location.pathname.split('/')[1] || 'es';
-        window.location.href = `/${lang}/account/banned?reason=${encodeURIComponent("Acceso revocado por el administrador")}`;
-      }
-    }
-  }
-
-  forceSecurityCheck();
-  
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') forceSecurityCheck();
-  });
 </script>

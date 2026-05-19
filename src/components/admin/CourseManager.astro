@@ -133,6 +133,44 @@ const t = useTranslations(lang);
                 <input 
                   type="checkbox" 
                   name="required_roles" 
+                  value="tester" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('tester');
+                    } catch {
+                      return roles === 'tester';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.tester')}
+              </label>
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
+                  value="partner" 
+                  checked={(() => {
+                    const roles = courseToEdit?.required_role;
+                    if (!roles) return false;
+                    try {
+                      const parsedRoles = typeof roles === 'string' ? JSON.parse(roles) : roles;
+                      return Array.isArray(parsedRoles) && parsedRoles.includes('partner');
+                    } catch {
+                      return roles === 'partner';
+                    }
+                  })()}
+                  class="w-4 h-4 rounded border-white/10 bg-black/50 text-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+                {t('admin.users.roles.partner')}
+              </label>
+              <label class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
+                <input 
+                  type="checkbox" 
+                  name="required_roles" 
                   value="admin" 
                   checked={(() => {
                     const roles = courseToEdit?.required_role;

@@ -1,4 +1,3 @@
-// @Isanchezv
 // src/lib/ftc.ts
 
 async function safeFetch(url: string, options: any = {}, timeout = 8000) {

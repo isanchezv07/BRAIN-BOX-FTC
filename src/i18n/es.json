@@ -182,6 +182,8 @@
           "lessons": "Explorar Lecciones",
           "dashboard": "Mi Dashboard",
           "adminPanel": "Panel Admin",
+          "partnerDashboard": "Panel Partner",
+          "testerDashboard": "Panel Tester",
           "playground": "Simulador",
           "educationalPanel": "Portafolio IA",
           "securityReports": "Reportes de Seguridad",
@@ -216,7 +218,9 @@
                 "student": "Estudiante",
                 "admin": "Admin",
                 "mod": "Moderador",
-                "teacher": "Profesor"
+                "teacher": "Profesor",
+                "partner": "Partner",
+                "tester": "Tester"
             },
             "modal": {
                 "bio": "Bio_Usuario",
@@ -240,6 +244,7 @@
                 "edit": "Editar",
                 "preview": "Vista Previa"
             },
+            "previewHint": "Vista previa (como la verán los estudiantes en la lección).",
             "editor": {
                 "placeholder": "Escribe aquí el contenido en Markdown..."
             },
@@ -554,50 +559,92 @@
         }
   },
   "scanner": {
-    "title": "Portfolio",
-    "highlight": "Scanner",
-    "subtitle": "Análisis de ingeniería con estándares de",
-    "credits": "Créditos de IA",
-    "world_class": "World Championship",
-    "objective": "Configuración de Objetivo (Específico por Premio)",
-    "dropzone": {
-        "idle": "ARRASTRA TU PORTAFOLIO O HAZ CLIC",
-        "format": "Formato: PDF (Recomendado < 5MB)"
-    },
-    "loading": "Procesando redes neuronales...",
-    "score": {
-        "title": "Engineering Score"
-    },
-    "compliance": {
-        "title": "Portfolio Compliance",
-        "pages": "Límite Páginas",
-        "coverage": "Cobertura",
-        "evidence": "Calidad Evidencia"
-    },
-    "analysis": {
-        "title": "Análisis Técnico"
-    },
-    "inspire": {
-        "title": "Award Gap"
-    },
-    "list": {
-        "critical": "Críticos / Violaciones",
-        "strengths": "Fortalezas",
-        "actions": "Próximos Pasos"
-    },
-    "interview": {
-        "title": "Simulador de Entrevista",
-        "evaluates": "¿Qué evalúa el juez?",
-        "strategy": "Estrategia",
-        "risk": "Riesgo",
-        "empty": "No se generaron preguntas para este portafolio."
-    },
-    "btn": {
-        "retry": "Escanear otro portafolio"
-    }
+      "title": "Portfolio",
+      "highlight": "Scanner",
+      "subtitle": "Análisis de ingeniería con estándares de",
+      "credits": "Créditos de IA",
+      "world_class": "World Championship",
+      "objective": "Configuración de Objetivo (Específico por Premio)",
+      "dropzone": {
+          "idle": "ARRASTRA TU PORTAFOLIO O HAZ CLIC",
+          "format": "Formato: PDF (Recomendado < 5MB)"
+      },
+      "loading": "Procesando redes neuronales...",
+      "score": {
+          "title": "Engineering Score"
+      },
+      "compliance": {
+          "title": "Portfolio Compliance",
+          "pages": "Límite Páginas",
+          "coverage": "Cobertura",
+          "evidence": "Calidad Evidencia"
+      },
+      "analysis": {
+          "title": "Análisis Técnico"
+      },
+      "inspire": {
+          "title": "Award Gap"
+      },
+      "list": {
+          "critical": "Críticos / Violaciones",
+          "strengths": "Fortalezas",
+          "actions": "Próximos Pasos"
+      },
+      "interview": {
+          "title": "Simulador de Entrevista",
+          "evaluates": "¿Qué evalúa el juez?",
+          "strategy": "Estrategia",
+          "risk": "Riesgo",
+          "empty": "No se generaron preguntas para este portafolio."
+      },
+      "btn": {
+          "retry": "Escanear otro portafolio"
+      }
   },
-  "verify": {
-        "title": "Verificación",
+  "credits": {  
+      "title": "MEMBRESÍA",
+      "highlight": "ENGINEERING",
+      "subtitle": "SUSCRÍBETE PARA RECIBIR CRÉDITOS MENSUALES AUTOMÁTICAMENTE",
+      "currency": "MXN",
+      "monthly": "MES",
+      "recommended": "RECOMENDADO",
+      "login": "INICIA SESIÓN",
+      "manage": "GESTIONAR MI PLAN",
+      "subscribe": "SUSCRIBIRME AHORA",
+      "footer_info": "Al adquirir créditos aceptas nuestros términos de servicio. Los créditos no caducan y pueden ser utilizados en cualquier momento de la temporada FIRST FTC.",
+      "how_it_works": "¿Cómo funcionan las membresías?",
+      "learn_more": "Más información sobre membresías"
+  },
+  "membership": {
+      "title": "DETALLES DE",
+      "highlight": "MEMBRESÍA",
+      "subtitle": "CONOCE CÓMO FUNCIONA TU SUSCRIPCIÓN EN BRAIN BOX FTC",
+      "reset_title": "RESETEO MENSUAL",
+      "reset_desc": "Cada mes, en tu fecha de facturación, tus tokens se resetearán automáticamente según tu plan contratado. Esto asegura que siempre tengas créditos disponibles para tus análisis.",
+      "cancellation_title": "POLÍTICA DE CANCELACIÓN",
+      "cancellation_desc": "Si decides cancelar tu suscripción, podrás seguir usando tus créditos restantes hasta el final de tu ciclo de facturación. Sin embargo, los tokens ya no se resetearán el siguiente mes.",
+      "how_to_cancel_title": "¿CÓMO CANCELAR?",
+      "how_to_cancel_desc": "Puedes gestionar o cancelar tu suscripción en cualquier momento desde el 'Portal de Pagos' en tu perfil o haciendo clic en 'Gestionar mi Plan' en la página de créditos.",
+      "support_title": "¿PROBLEMAS CON TUS CRÉDITOS?",
+      "support_desc": "Si notas que tus tokens no se han reseteado correctamente según tu plan o tienes alguna discrepancia en tu cuenta, por favor contacta a nuestro equipo de soporte técnico inmediatamente.",
+      "support_button": "REPORTAR PROBLEMA",
+      "form": {
+          "name": "Nombre Completo",
+          "email": "Tu Correo Electrónico",
+          "subject": "Asunto",
+          "message": "Detalles del problema",
+          "send": "Enviar Reporte",
+          "sending": "Enviando...",
+          "success": "Reporte enviado con éxito. Revisaremos tu caso lo antes posible.",
+          "error": "Hubo un error al enviar el reporte. Por favor, intenta de nuevo.",
+          "subjects": {
+              "reset": "Fallo en reseteo de tokens",
+              "payment": "Problema con el pago",
+              "other": "Otro problema técnico"
+          }
+      },
+      "back_to_credits": "VOLVER"
+  },  "verify": {        "title": "Verificación",
         "valid": "Certificado Válido ✅",
         "invalid": "No Encontrado ❌",
         "registry": "Registro Oficial BRAIN BOX FTC",

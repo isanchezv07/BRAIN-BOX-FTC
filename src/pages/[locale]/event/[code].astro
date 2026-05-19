@@ -1,6 +1,4 @@
 ---
-// @Isanchezv
-// src/pages/[locale]/event/[code].astro
 import Layout from "@/layouts/Layout.astro";
 import { getFullTeamIntelligence } from "@/lib/ftc";
 
@@ -89,6 +87,7 @@ playoffMatches.forEach(m => {
 
 });
 
+// ordenar matches dentro de cada serie
 Object.values(playoffBrackets).forEach((matches: any) => {
   matches.sort((a, b) => (a.matchNumber ?? 0) - (b.matchNumber ?? 0));
 });

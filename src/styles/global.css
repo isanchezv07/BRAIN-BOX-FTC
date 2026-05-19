@@ -1,1 +1,145 @@
 @import "tailwindcss";
+
+.midu-content {
+  line-height: 1.8;
+  font-size: 1.1rem;
+  color: #a1a1aa;
+}
+
+.midu-content p {
+  margin-bottom: 1.5rem;
+}
+
+.midu-content h1 {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  font-style: italic;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.midu-content h2 {
+  font-size: 1.6rem !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  font-style: italic;
+  margin-top: 4rem !important;
+  margin-bottom: 1.5rem !important;
+  display: flex;
+  align-items: center;
+}
+
+.midu-content h2::before {
+  content: "";
+  width: 0.8rem;
+  height: 0.8rem;
+  background: #eab308;
+  margin-right: 1rem;
+  flex-shrink: 0;
+  transform: rotate(45deg);
+}
+
+.midu-content h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f4f4f5;
+  margin-top: 2.5rem;
+  text-transform: uppercase;
+}
+
+.midu-content ul {
+  margin-left: 1.5rem;
+  list-style-type: square;
+  margin-bottom: 2rem;
+}
+
+.midu-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 2rem;
+  list-style-type: decimal;
+}
+
+.midu-content li {
+  margin-bottom: 0.5rem;
+}
+
+.midu-content ul li::marker {
+  color: #eab308;
+}
+
+.midu-content a {
+  color: #eab308;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.midu-content pre {
+  background: #000;
+  border: 1px solid #27272a;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+
+.midu-content code {
+  color: #fcd34d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.midu-content :not(pre) > code {
+  background: rgba(234, 179, 8, 0.12);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 0.9em;
+}
+
+.midu-content hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 2.5rem 0;
+}
+
+.midu-content blockquote {
+  border-left: 3px solid #eab308;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin: 1.5rem 0;
+  color: #d4d4d8;
+  font-style: italic;
+}
+
+.midu-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.midu-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.midu-content th,
+.midu-content td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.65rem 1rem;
+  text-align: left;
+}
+
+.midu-content th {
+  background: rgba(234, 179, 8, 0.08);
+  color: #fafafa;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}

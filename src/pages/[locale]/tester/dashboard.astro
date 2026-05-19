@@ -1,0 +1,337 @@
+---
+// @Isanchezv
+// src/pages/[locale]/tester/dashboard.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { supabase } from "@/lib/supabase";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { user, profile } = Astro.locals;
+
+if (!user || (profile?.role !== "tester" && profile?.role !== "admin")) {
+  return Astro.redirect(`/${lang}/auth/signin`);
+}
+
+const { data: draftCourses } = await supabase
+  .from("courses")
+  .select("*, categories(name), lessons(id, title, content, quiz_data)")
+  .eq("is_published", false)
+  .order("updated_at", { ascending: false });
+
+const startTime = Date.now();
+const { error: pingError } = await supabase.from('profiles').select('id').limit(1);
+const latency = Date.now() - startTime;
+
+const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+const { count: activeHour } = await supabase
+  .from("lesson_progress")
+  .select("user_id", { count: 'exact', head: true })
+  .gt("completed_at", oneHourAgo);
+
+const { count: activeDay } = await supabase
+  .from("lesson_progress")
+  .select("user_id", { count: 'exact', head: true })
+  .gt("completed_at", twentyFourHoursAgo);
+
+const lessonsWithIssues = draftCourses?.flatMap(c => 
+  c.lessons?.filter((l: any) => !l.content || l.content.length < 50)
+    .map((l: any) => ({ ...l, courseTitle: c.title })) || []
+) || [];
+
+const coursesWithoutLessons = draftCourses?.filter(c => !c.lessons || c.lessons.length === 0) || [];
+
+const { data: recentLogs } = await supabase
+  .from("audit_logs")
+  .select("*, profiles:target_user_id(username)")
+  .order("created_at", { ascending: false })
+  .limit(5);
+
+const systemStats = [
+  { label: "LATENCY_DB", value: `${latency}ms`, status: pingError ? "CRITICAL" : (latency > 500 ? "DEGRADED" : "NOMINAL") },
+  { label: "LIVE_USERS_1H", value: activeHour || 0, status: "MONITORING" },
+  { label: "QC_BACKLOG", value: draftCourses?.length || 0, status: "STAGED" },
+  { label: "INTEGRITY_ALERTS", value: lessonsWithIssues.length + coursesWithoutLessons.length, status: (lessonsWithIssues.length + coursesWithoutLessons.length > 0 ? "WARNING" : "OPTIMAL") }
+];
+---
+
+<Layout title="Tester Dashboard // System_Diagnostic">
+  <main class="relative bg-[#050505] text-white selection:bg-red-500/30 font-mono antialiased min-h-screen">
+    <div class="max-w-7xl mx-auto p-6 md:p-16 space-y-16 relative z-10">
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-10">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 text-[10px] text-red-500 uppercase tracking-[0.2em] font-black">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            System_Diagnostic_Mode // Active_Session
+          </div>
+          <h1 class="text-3xl font-light tracking-tighter text-white uppercase">
+            Tester_Node // <span class="font-bold">{profile?.username || "Agent"}</span>
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-8">
+            <div class="text-right">
+                <div class="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">Environmental_Status</div>
+                <div id="env-status" class="text-xl font-bold text-green-500">NOMINAL</div>
+            </div>
+            <div class="px-6 py-2 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest italic flex items-center gap-3">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Beta_Stream_v4.2
+            </div>
+        </div>
+      </header>
+
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {systemStats.map(stat => (
+            <div class="p-8 bg-white/[0.02] border border-white/5 space-y-4 hover:border-white/10 transition-all">
+                <div class="flex justify-between items-start">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{stat.label}</span>
+                    <span id={`status-${stat.label}`} class={`status-badge text-[8px] px-2 py-0.5 font-black rounded-sm border ${
+                        stat.status === 'CRITICAL' || stat.status === 'WARNING' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                        stat.status === 'LIVE' || stat.status === 'OPTIMAL' || stat.status === 'NOMINAL' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                        'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                    }`}>{stat.status}</span>
+                </div>
+                <div id={`val-${stat.label}`} class="text-4xl font-bold tracking-tighter italic">{stat.value}</div>
+            </div>
+        ))}
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <aside class="lg:col-span-4 space-y-12">
+          <section class="space-y-6">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.3em] font-bold">Integrity_Check_Protocol</h3>
+            <div id="integrity-container" class="space-y-3">
+                {lessonsWithIssues.length > 0 || coursesWithoutLessons.length > 0 ? (
+                    <>
+                        {lessonsWithIssues.map(l => (
+                            <div class="p-4 bg-red-500/5 border border-red-500/10 space-y-1">
+                                <div class="text-[8px] text-red-500 font-black uppercase tracking-widest">LOW_DENSITY_CONTENT</div>
+                                <div class="text-[11px] font-bold uppercase line-clamp-1">{l.title}</div>
+                                <div class="text-[9px] text-zinc-600 italic">Course: {l.courseTitle}</div>
+                            </div>
+                        ))}
+                        {coursesWithoutLessons.map(c => (
+                            <div class="p-4 bg-orange-500/5 border border-orange-500/10 space-y-1">
+                                <div class="text-[8px] text-orange-500 font-black uppercase tracking-widest">EMPTY_MODULE</div>
+                                <div class="text-[11px] font-bold uppercase line-clamp-1">{c.title}</div>
+                            </div>
+                        ))}
+                    </>
+                ) : (
+                    <div class="p-8 border border-dashed border-white/5 text-center text-zinc-800 text-[10px] font-bold uppercase tracking-widest">
+                        Zero_Critical_Integrity_Issues
+                    </div>
+                )}
+            </div>
+          </section>
+
+          <section class="space-y-6">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.3em] font-bold">Tester_Toolkit</h3>
+            <div class="grid grid-cols-1 gap-2">
+                <button class="w-full text-left p-6 border border-zinc-900 hover:border-blue-500 transition-all group bg-white/[0.01]">
+                    <div class="text-[10px] text-zinc-400 group-hover:text-blue-500 transition-colors font-bold uppercase flex justify-between">
+                        Report_Bug_Stack
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                    </div>
+                    <p class="text-[9px] text-zinc-700 mt-2 italic">Capture environment variables and browser logs for engineering review.</p>
+                </button>
+                <button class="w-full text-left p-6 border border-zinc-900 hover:border-purple-500 transition-all group bg-white/[0.01]">
+                    <div class="text-[10px] text-zinc-400 group-hover:text-purple-500 transition-colors font-bold uppercase flex justify-between">
+                        Security_Heuristic_Scan
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <p class="text-[9px] text-zinc-700 mt-2 italic">Validate RBAC policies and API endpoint protection status.</p>
+                </button>
+            </div>
+          </section>
+
+          <section class="space-y-6">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.3em] font-bold">Audit_Stream_Log</h3>
+            <div id="log-container" class="space-y-3 font-mono">
+                {recentLogs?.map(log => (
+                    <div class="text-[10px] space-y-1 opacity-70 hover:opacity-100 transition-opacity">
+                        <div class="flex justify-between border-b border-white/5 pb-1">
+                            <span class="text-blue-500">{new Date(log.created_at).toLocaleTimeString()}</span>
+                            <span class="text-zinc-500 uppercase">{log.action}</span>
+                        </div>
+                        <p class="text-zinc-400 truncate">Target: {log.profiles?.username || 'System'}</p>
+                    </div>
+                ))}
+            </div>
+          </section>
+        </aside>
+
+        <div class="lg:col-span-8 space-y-16">
+          
+          <section class="space-y-8">
+            <div class="flex justify-between items-end">
+                <h3 class="text-[10px] text-zinc-400 uppercase tracking-[0.4em] font-bold flex items-center gap-4 flex-1">
+                    Quality_Control_Queue
+                    <span class="h-px flex-1 bg-white/5"></span>
+                </h3>
+            </div>
+
+            <div class="space-y-4">
+                {draftCourses && draftCourses.length > 0 ? draftCourses.map((course) => (
+                    <div class="group relative bg-[#080808] border border-white/5 p-8 transition-all hover:bg-white/[0.01] hover:border-white/20">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                            <div class="space-y-4 flex-1">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">{course.categories?.name || 'Uncategorized'}</span>
+                                    <div class="h-1 w-1 rounded-full bg-zinc-800"></div>
+                                    <span class="text-[9px] text-orange-500 font-bold uppercase tracking-widest">Revision_Staged</span>
+                                </div>
+                                <h4 class="text-2xl font-bold tracking-tight text-white group-hover:text-red-400 transition-colors uppercase">{course.title}</h4>
+                                <div class="flex flex-wrap gap-4 text-[10px] text-zinc-500 font-mono">
+                                    <span>Lessons: {course.lessons?.length || 0}</span>
+                                    <span>Updated: {new Date(course.updated_at).toLocaleDateString()}</span>
+                                    <span>ID: {course.id.slice(0,8)}</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+                                <a href={`/${lang}/courses/${course.id}`} class="text-center px-8 py-4 bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
+                                    Initiate_QC_Check
+                                </a>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="p-2 border border-white/5 text-center text-[8px] text-zinc-600 uppercase font-black">Structure: OK</div>
+                                    <div class="p-2 border border-white/5 text-center text-[8px] text-zinc-600 uppercase font-black">Assets: {course.lessons?.some((l:any)=>l.quiz_data) ? 'QUIZ+' : 'TEXT'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )) : (
+                    <div class="py-20 border border-dashed border-white/5 flex flex-col items-center justify-center text-center space-y-4">
+                        <div class="text-zinc-800 uppercase font-black italic tracking-widest text-lg opacity-20">NO_PENDING_MODULES_FOUND</div>
+                        <p class="text-[10px] text-zinc-700 uppercase tracking-widest">Awaiting_Engineering_Push...</p>
+                    </div>
+                )}
+            </div>
+          </section>
+
+          <section class="space-y-8">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.4em] font-bold flex items-center gap-4">
+                Local_Activity_History
+                <span class="h-px flex-1 bg-white/5"></span>
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="space-y-1">
+                    <span class="text-[9px] text-zinc-700 uppercase font-black">SESSIONS_24H</span>
+                    <div id="val-active-day" class="text-2xl font-bold tracking-tighter text-white">{activeDay}</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="text-[9px] text-zinc-700 uppercase font-black">FAIL_LOGS</span>
+                    <div class="text-2xl font-bold tracking-tighter text-red-500/50">0</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="text-[9px] text-zinc-700 uppercase font-black">PATCH_NOTES</span>
+                    <div class="text-2xl font-bold tracking-tighter text-zinc-600">v1.2</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="text-[9px] text-zinc-700 uppercase font-black">ENCRYPTION</span>
+                    <div class="text-2xl font-bold tracking-tighter text-green-500/50">AES-256</div>
+                </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</Layout>
+
+<script is:inline>
+  async function updateTelemetry() {
+    try {
+      const response = await fetch('/api/tester/telemetry');
+      if (!response.ok) throw new Error('API_OFFLINE');
+      const data = await response.json();
+
+      const updateVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+      };
+
+      const updateStatus = (id, status) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerText = status;
+        el.className = 'status-badge text-[8px] px-2 py-0.5 font-black rounded-sm border ';
+        if (status === 'CRITICAL' || status === 'WARNING' || status === 'ERROR') {
+          el.classList.add('bg-red-500/10', 'text-red-500', 'border-red-500/20');
+        } else if (status === 'LIVE' || status === 'OPTIMAL' || status === 'STABLE' || status === 'NOMINAL') {
+          el.classList.add('bg-green-500/10', 'text-green-500', 'border-green-500/20');
+        } else {
+          el.classList.add('bg-blue-500/10', 'text-blue-500', 'border-blue-500/20');
+        }
+      };
+
+      updateVal('val-LATENCY_DB', data.metrics.latency);
+      updateStatus('status-LATENCY_DB', data.metrics.latencyStatus);
+      updateVal('val-LIVE_USERS_1H', data.metrics.activeHour);
+      updateVal('val-QC_BACKLOG', data.metrics.backlogCount);
+      updateVal('val-INTEGRITY_ALERTS', data.metrics.integrityCount);
+      updateStatus('status-INTEGRITY_ALERTS', data.metrics.integrityStatus);
+      updateVal('val-active-day', data.metrics.activeDay);
+
+      const envStatus = document.getElementById('env-status');
+      if (envStatus) {
+        envStatus.innerText = data.metrics.latencyStatus === 'CRITICAL' ? 'DEGRADED' : 'NOMINAL';
+        envStatus.className = `text-xl font-bold ${data.metrics.latencyStatus === 'CRITICAL' ? 'text-red-500' : 'text-green-500'}`;
+      }
+
+      const integrityContainer = document.getElementById('integrity-container');
+      if (integrityContainer) {
+        if (data.metrics.integrityCount === 0) {
+          integrityContainer.innerHTML = `<div class="p-8 border border-dashed border-white/5 text-center text-zinc-800 text-[10px] font-bold uppercase tracking-widest">Zero_Critical_Integrity_Issues</div>`;
+        } else {
+          let html = '';
+          data.integrity.lessonsWithIssues.forEach(l => {
+            html += `<div class="p-4 bg-red-500/5 border border-red-500/10 space-y-1">
+                      <div class="text-[8px] text-red-500 font-black uppercase tracking-widest">LOW_DENSITY_CONTENT</div>
+                      <div class="text-[11px] font-bold uppercase line-clamp-1">${l.title}</div>
+                      <div class="text-[9px] text-zinc-600 italic">Course: ${l.courseTitle}</div>
+                    </div>`;
+          });
+          data.integrity.coursesWithoutLessons.forEach(c => {
+            html += `<div class="p-4 bg-orange-500/5 border border-orange-500/10 space-y-1">
+                      <div class="text-[8px] text-orange-500 font-black uppercase tracking-widest">EMPTY_MODULE</div>
+                      <div class="text-[11px] font-bold uppercase line-clamp-1">${c.title}</div>
+                    </div>`;
+          });
+          integrityContainer.innerHTML = html;
+        }
+      }
+
+      const logContainer = document.getElementById('log-container');
+      if (logContainer && data.logs) {
+        logContainer.innerHTML = data.logs.map(log => `
+          <div class="text-[10px] space-y-1 opacity-70 hover:opacity-100 transition-opacity">
+              <div class="flex justify-between border-b border-white/5 pb-1">
+                  <span class="text-blue-500">${log.time}</span>
+                  <span class="text-zinc-500 uppercase">${log.action}</span>
+              </div>
+              <p class="text-zinc-400 truncate">Target: ${log.target}</p>
+          </div>
+        `).join('');
+      }
+
+    } catch (e) {
+      console.error('Telemetry_Sync_Error:', e);
+      const envStatus = document.getElementById('env-status');
+      if (envStatus) {
+        envStatus.innerText = 'OFFLINE';
+        envStatus.classList.add('text-red-500');
+      }
+    }
+  }
+
+  setInterval(updateTelemetry, 5000);
+</script>

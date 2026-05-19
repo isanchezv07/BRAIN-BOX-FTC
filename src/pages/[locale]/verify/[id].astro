@@ -2,13 +2,12 @@
 // @Isanchezv
 // src/pages/[locale]/verify/[id].astro
 import Layout from "@/layouts/Layout.astro";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const { id } = Astro.params;
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const supabaseAdmin = getSupabaseAdmin();
 
 const { data: cert, error } = await supabaseAdmin
   .from('certificates')

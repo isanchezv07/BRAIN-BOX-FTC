@@ -1,0 +1,131 @@
+---
+// @Isanchezv
+// src/pages/[locale]/partner/dashboard.astro
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { supabase } from "@/lib/supabase";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { user, profile } = Astro.locals;
+
+if (!user || (profile?.role !== "partner" && profile?.role !== "admin")) {
+  return Astro.redirect(`/${lang}/auth/signin`);
+}
+const partnerTeam = profile?.team_number?.toString() || profile?.username;
+
+const { data: partnerCourses } = await supabase
+  .from("courses")
+  .select("*, categories(name), lessons(id)")
+  .eq("team", partnerTeam)
+  .order("created_at", { ascending: false });
+
+const courseIds = partnerCourses?.map(c => c.id) || [];
+let totalEnrollments = 0;
+
+if (courseIds.length > 0) {
+    const { count } = await supabase
+        .from("lesson_progress")
+        .select("user_id", { count: 'exact', head: true })
+        .in("lesson_id", partnerCourses?.flatMap(c => c.lessons.map((l: any) => l.id)) || []);
+    totalEnrollments = count || 0;
+}
+---
+
+<Layout title="Partner Dashboard">
+  <main class="relative bg-[#050505] text-white selection:bg-green-500/30 font-mono antialiased min-h-screen">
+    <div class="max-w-6xl mx-auto p-6 md:p-16 space-y-16 relative z-10">
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-10">
+        <div class="space-y-1">
+          <div class="text-[10px] text-green-500 uppercase tracking-[0.2em]">Alliance_Operational_Hub</div>
+          <h1 class="text-3xl font-light tracking-tighter text-white uppercase">
+            Partner_Console // <span class="font-bold">{partnerTeam || "Alliance"}</span>
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-8">
+            <div class="text-right">
+                <div class="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">Total_Engagement</div>
+                <div class="text-xl font-bold text-white">{totalEnrollments} <span class="text-[10px] text-zinc-500 font-normal">USERS</span></div>
+            </div>
+            <div class="px-6 py-2 border border-green-500/20 text-green-500 text-[10px] font-bold uppercase tracking-widest italic">
+                ACTIVE_PARTNER
+            </div>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-16">
+        <aside class="md:col-span-4 space-y-12">
+          <section class="space-y-6">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.3em] font-bold">Alliance_Metrics</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                    <span class="text-xs text-zinc-500 italic">Managed_Modules</span>
+                    <span class="text-xl font-bold">{partnerCourses?.length || 0}</span>
+                </div>
+                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                    <span class="text-xs text-zinc-500 italic">Active_Students</span>
+                    <span class="text-xl font-bold">{totalEnrollments}</span>
+                </div>
+            </div>
+          </section>
+
+          <section class="space-y-4 pt-4">
+            <h3 class="text-[10px] text-zinc-600 uppercase tracking-[0.3em] font-bold">Token_Inventory</h3>
+            <div class="p-6 bg-green-500/5 border border-green-500/10 rounded-xl">
+                <div class="text-[9px] text-green-500/50 uppercase mb-2">Allocated_Credits</div>
+                <div class="text-2xl font-bold">∞ <span class="text-xs font-normal opacity-50">UNLIMITED</span></div>
+            </div>
+          </section>
+        </aside>
+
+        <div class="md:col-span-8 space-y-16">
+          <section class="space-y-8">
+            <h3 class="text-[10px] text-zinc-400 uppercase tracking-[0.4em] font-bold flex items-center gap-4">
+                Operational_Modules
+                <span class="h-px flex-1 bg-white/5"></span>
+            </h3>
+
+            <div class="space-y-4">
+                {partnerCourses && partnerCourses.length > 0 ? partnerCourses.map((course) => (
+                    <div class="group relative py-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 hover:bg-white/[0.01] px-4 transition-all">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-3">
+                                <span class="text-[8px] text-zinc-600 font-bold uppercase">{course.categories?.name || 'Technical'}</span>
+                                <span class={`text-[8px] font-bold uppercase ${course.is_published ? 'text-green-500' : 'text-orange-500'}`}>
+                                    {course.is_published ? 'LIVE' : 'DRAFT'}
+                                </span>
+                            </div>
+                            <h4 class="text-lg font-bold tracking-tight text-white group-hover:text-green-400 transition-colors uppercase">{course.title}</h4>
+                        </div>
+                        <a href={`/${lang}/courses/${course.id}`} class="text-[9px] font-bold text-zinc-400 hover:text-white border border-zinc-800 px-6 py-2 hover:border-green-500 transition-all uppercase tracking-widest">
+                            Review_Analytics
+                        </a>
+                    </div>
+                )) : (
+                    <div class="py-12 border border-dashed border-white/5 flex items-center justify-center text-zinc-800 text-[10px] font-bold uppercase tracking-[0.5em] italic">
+                        No_Modules_Assigned_To_Alliance
+                    </div>
+                )}
+            </div>
+          </section>
+          <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-8 border border-white/5 space-y-4">
+                <h4 class="text-[10px] text-zinc-500 font-bold uppercase">Resource_Link //</h4>
+                <p class="text-[10px] text-zinc-600 italic">Access official documentation for curriculum development and technical standards.</p>
+                <button class="text-[9px] font-bold text-white underline tracking-widest uppercase italic">Download_Guide</button>
+            </div>
+            <div class="p-8 border border-white/5 space-y-4">
+                <h4 class="text-[10px] text-zinc-500 font-bold uppercase">Support_Channel //</h4>
+                <p class="text-[10px] text-zinc-600 italic">Direct communication line with the FTC PRO core engineering team.</p>
+                <button class="text-[9px] font-bold text-white underline tracking-widest uppercase italic">Open_Terminal</button>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</Layout>

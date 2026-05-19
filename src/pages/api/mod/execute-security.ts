@@ -1,30 +1,16 @@
 // @Isanchezv
 // src/pages/api/mod/execute-security.ts
 import type { APIRoute } from "astro";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   const { action, target_id, target_username } = await request.json();
-  const supabase = getSupabaseAdmin();
+  const supabase = supabaseAdmin;
 
-  const accessToken = cookies.get("sb-access-token")?.value;
-  if (!accessToken) {
-    return new Response(JSON.stringify({ details: "No autorizado" }), { status: 401 });
-  }
+  const { user: moderator, profile: modProfile } = locals;
 
-  const { data: { user: moderator } } = await supabase.auth.getUser(accessToken);
-  if (!moderator) {
-    return new Response(JSON.stringify({ details: "Sesión inválida" }), { status: 401 });
-  }
-
-  const { data: modProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", moderator.id)
-    .single();
-
-  if (!modProfile || (modProfile.role !== 'admin' && modProfile.role !== 'mod')) {
-    return new Response(JSON.stringify({ details: "Permisos insuficientes" }), { status: 403 });
+  if (!moderator || !modProfile || !['admin', 'mod'].includes(modProfile.role)) {
+    return new Response(JSON.stringify({ details: "No autorizado" }), { status: 403 });
   }
 
   const moderatorId = moderator.id;

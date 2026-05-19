@@ -2,68 +2,36 @@
 // @Isanchezv
 // src/pages/[locale]/courses/[id]/index.astro
 import Layout from "@/layouts/Layout.astro";
-import { supabase } from "@/lib/supabase";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { getCourseWithLessons, getUserLessonProgress, checkCourseAccess } from "@/lib/courses";
 
-const { id, locale } = Astro.params;
+const { id } = Astro.params;
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-const accessToken = Astro.cookies.get("sb-access-token");
-const refreshToken = Astro.cookies.get("sb-refresh-token");
+// Usar locals (procesados por middleware)
+const { user, profile } = Astro.locals;
 
-let user = null;
-let completedLessonsGlobal = new Set();
+// Obtener detalles del curso
+const course = await getCourseWithLessons(id!);
 
-if (accessToken && refreshToken) {
-  const { data: sessionData } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-  user = sessionData.session?.user;
+if (!course) return Astro.redirect(`/${lang}/404`);
 
-  if (user) {
-    const { data: progressRes } = await supabase
-      .from("lesson_progress")
-      .select("lesson_id, completed, quiz_score")
-      .eq("user_id", user.id);
-    
-    if (progressRes) {
-      completedLessonsGlobal = new Set(
-        progressRes
-          .filter(p => p.completed === true || (p.quiz_score !== null && p.quiz_score >= 70))
-          .map(p => p.lesson_id)
-      );
-    }
-  }
-}
-
-const { data: profile } = await supabase.from("profiles").select("*").eq("id", user?.id).single();
-
-const { data: course } = await supabase
-  .from("courses")
-  .select(`*, lessons(*)`)
-  .eq("id", id)
-  .single();
-
-let hasRoleAccess = true;
-if (course?.required_role && profile?.role !== 'admin') {
-  try {
-    const requiredRoles = typeof course.required_role === 'string' ? JSON.parse(course.required_role) : course.required_role;
-    hasRoleAccess = Array.isArray(requiredRoles) && requiredRoles.includes(profile?.role);
-  } catch {
-    hasRoleAccess = true;
-  }
-}
-
-if (!hasRoleAccess) {
+// Verificar acceso por rol
+if (!checkCourseAccess(course, profile?.role || 'student')) {
   return Astro.redirect(`/${lang}/account/dashboard`);
 }
 
-let hasAccess = !!user;
-const courseLessons = (course?.lessons || []).sort((a, b) => a.order_index - b.order_index);
+// Obtener progreso del usuario
+let completedLessonsGlobal = new Set<string>();
+if (user) {
+  completedLessonsGlobal = await getUserLessonProgress(user.id);
+}
+
+const hasAccess = !!user;
+const courseLessons = course.lessons || [];
 const totalLessons = courseLessons.length;
-const completedInThisCourse = courseLessons.filter(lesson => completedLessonsGlobal.has(lesson.id)).length;
+const completedInThisCourse = courseLessons.filter((lesson: any) => completedLessonsGlobal.has(lesson.id)).length;
 const progressPercentage = totalLessons > 0 ? (completedInThisCourse / totalLessons) * 100 : 0;
 ---
 
@@ -71,7 +39,7 @@ const progressPercentage = totalLessons > 0 ? (completedInThisCourse / totalLess
   
   <main class="max-w-5xl mx-auto p-6 md:p-12">
     <nav class="flex justify-between items-center mb-10">
-      <a href={`/${lang}/account/dashboard`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
+      <a href={`/${lang}/explore`} class="inline-flex items-center gap-3 text-[10px] font-black text-gray-500 hover:text-white transition-all uppercase tracking-[0.2em] group">
         <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/5 group-hover:border-blue-500/50 group-hover:bg-blue-500/10 transition-all">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </div>

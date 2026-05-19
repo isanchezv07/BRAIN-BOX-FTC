@@ -2,8 +2,8 @@
 // @Isanchezv
 // src/components/CertificateGenerator.astro
 import { getLangFromUrl, useTranslations } from '@/i18n/utils';
-import { getSupabaseAdmin } from '@/lib/supabase';
-import { ViewTransitions } from 'astro:transitions';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { ClientRouter } from 'astro:transitions';
 import QRCode from 'qrcode';
 
 interface Props {
@@ -17,7 +17,6 @@ const { userName, courseTitle, courseId, userId } = Astro.props;
 const lang = getLangFromUrl(Astro.url); 
 const t = useTranslations(lang);
 
-const supabaseAdmin = getSupabaseAdmin();
 let certificateId = "";
 
 const { data: existing } = await supabaseAdmin
@@ -54,7 +53,7 @@ const canvasLabels = {
 ---
 
 <head>
-  <ViewTransitions />
+  <ClientRouter />
 </head>
 
 <div class="certificate-wrapper w-full max-w-4xl mx-auto px-4 py-10">

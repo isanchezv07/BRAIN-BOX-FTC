@@ -1,23 +1,10 @@
 // @Isanchezv
 // src/pages/api/auth/delete-account.ts
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { clearSession } from "@/lib/auth-session";
 
 export const POST: APIRoute = async ({ cookies, redirect }) => {
-  const supabaseUrl = import.meta.env.SUPABASE_URL || process.env.SUPABASE_URL;
-  const serviceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceKey) {
-    return new Response("Configuración incompleta: Faltan llaves de administrador en el servidor.", { status: 500 });
-  }
-
-  const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-
   const accessToken = cookies.get("sb-access-token")?.value;
 
   if (!accessToken) {
@@ -39,8 +26,7 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
     return new Response(`Error al borrar: ${deleteError.message}`, { status: 500 });
   }
 
-  cookies.delete("sb-access-token", { path: "/" });
-  cookies.delete("sb-refresh-token", { path: "/" });
+  clearSession(cookies);
   
   return redirect("/es/register?message=account-deleted");
 };

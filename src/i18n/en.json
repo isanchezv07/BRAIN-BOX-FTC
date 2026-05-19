@@ -182,6 +182,8 @@
             "lessons": "Explore Lessons",
             "dashboard": "My Dashboard",
             "adminPanel": "Admin Panel",
+            "partnerDashboard": "Partner Dashboard",
+            "testerDashboard": "Tester Dashboard",
             "signout": "Sign Out",
             "educationalPanel": "Portfolio AI",
             "securityReports": "Security Reports",
@@ -216,7 +218,9 @@
                 "student": "Student",
                 "admin": "Admin",
                 "mod": "Moderator",
-                "teacher": "Teacher"
+                "teacher": "Teacher",
+                "partner": "Partner",
+                "tester": "Tester"
             },
             "modal": {
                 "bio": "User_Bio",
@@ -240,6 +244,7 @@
                 "edit": "Edit",
                 "preview": "Preview"
             },
+            "previewHint": "Preview — this matches what students see in the lesson.",
             "editor": {
                 "placeholder": "Write your Markdown content here..."
             },
@@ -384,7 +389,7 @@
   },
   "buttons": {
         "markComplete": "Mark as completed 🎉",
-        "back": " BACK"
+        "back": "BACK"
   },
   "footer": {
         "brandDescription": "High-performance learning systems for competitive robotics.",
@@ -554,50 +559,92 @@
         }
   },
   "scanner": {
-        "title": "Portfolio",
-        "highlight": "Scanner",
-        "subtitle": "Engineering analysis with standards of",
-        "credits": "AI Credits",
-        "world_class": "World Championship",
-        "objective": "Objective Configuration (Specific by Award)",
-        "dropzone": {
-            "idle": "DRAG YOUR PORTFOLIO OR CLICK",
-            "format": "Format: PDF (Recommended < 5MB)"
-        },
-        "score": {
-            "title": "Engineering Score"
-        },
-        "loading": "Processing neural networks...",
-        "compliance": {
-            "title": "Portfolio Compliance",
-            "pages": "Page Limit",
-            "coverage": "Coverage",
-            "evidence": "Evidence Quality"
-        },
-        "analysis": {
-            "title": "Technical Analysis"
-        },
-        "inspire": {
-            "title": "Award Gap"
-        },
-        "list": {
-            "critical": "Criticals / Violations",
-            "strengths": "Strengths",
-            "actions": "Next Steps"
-        },
-        "interview": {
-            "title": "Interview Simulator",
-            "evaluates": "What is the judge testing?",
-            "strategy": "Strategy",
-            "risk": "Risk",
-            "empty": "No questions were generated for this portfolio."
-        },
-        "btn": {
-            "retry": "Scan another portfolio"
-        }
+      "title": "Portfolio",
+      "highlight": "Scanner",
+      "subtitle": "Engineering analysis with standards of",
+      "credits": "AI Credits",
+      "world_class": "World Championship",
+      "objective": "Objective Configuration (Specific by Award)",
+      "dropzone": {
+          "idle": "DRAG YOUR PORTFOLIO OR CLICK",
+          "format": "Format: PDF (Recommended < 5MB)"
+      },
+      "score": {
+          "title": "Engineering Score"
+      },
+      "loading": "Processing neural networks...",
+      "compliance": {
+          "title": "Portfolio Compliance",
+          "pages": "Page Limit",
+          "coverage": "Coverage",
+          "evidence": "Evidence Quality"
+      },
+      "analysis": {
+          "title": "Technical Analysis"
+      },
+      "inspire": {
+          "title": "Award Gap"
+      },
+      "list": {
+          "critical": "Criticals / Violations",
+          "strengths": "Strengths",
+          "actions": "Next Steps"
+      },
+      "interview": {
+          "title": "Interview Simulator",
+          "evaluates": "What is the judge testing?",
+          "strategy": "Strategy",
+          "risk": "Risk",
+          "empty": "No questions were generated for this portfolio."
+      },
+      "btn": {
+          "retry": "Scan another portfolio"
+      }
   },
-  "verify": {
-        "title": "Verification",
+  "credits": {
+      "title": "ENGINEERING",
+      "highlight": "MEMBERSHIP",
+      "subtitle": "SUBSCRIBE TO RECEIVE MONTHLY CREDITS AUTOMATICALLY",
+      "currency": "MXN",
+      "monthly": "MONTH",
+      "recommended": "RECOMMENDED",
+      "login": "SIGN IN",
+      "manage": "MANAGE MY PLAN",
+      "subscribe": "SUBSCRIBE NOW",
+      "footer_info": "By purchasing credits you accept our terms of service. Credits do not expire and can be used at any time during the FIRST FTC season.",
+      "how_it_works": "How do memberships work?",
+      "learn_more": "Learn more about memberships"
+  },
+  "membership": {
+      "title": "MEMBERSHIP",
+      "highlight": "DETAILS",
+      "subtitle": "LEARN HOW YOUR BRAIN BOX FTC SUBSCRIPTION WORKS",
+      "reset_title": "MONTHLY RESET",
+      "reset_desc": "Each month, on your billing date, your tokens will automatically reset according to your contracted plan. This ensures you always have credits available for your analysis.",
+      "cancellation_title": "CANCELLATION POLICY",
+      "cancellation_desc": "If you decide to cancel your subscription, you can continue using your remaining credits until the end of your billing cycle. However, tokens will no longer reset the following month.",
+      "how_to_cancel_title": "HOW TO CANCEL?",
+      "how_to_cancel_desc": "You can manage or cancel your subscription at any time from the 'Payment Portal' in your profile or by clicking 'Manage my Plan' on the credits page.",
+      "support_title": "CREDIT ISSUES?",
+      "support_desc": "If you notice that your tokens have not reset correctly according to your plan or you have any discrepancy in your account, please contact our technical support team immediately.",
+      "support_button": "REPORT ISSUE",
+      "form": {
+          "name": "Full Name",
+          "email": "Your Email",
+          "subject": "Subject",
+          "message": "Issue details",
+          "send": "Send Report",
+          "sending": "Sending...",
+          "success": "Report sent successfully. We will review your case as soon as possible.",
+          "error": "There was an error sending the report. Please try again.",
+          "subjects": {
+              "reset": "Token reset failure",
+              "payment": "Payment issue",
+              "other": "Other technical issue"
+          }
+      },
+      "back_to_credits": "BACK"
+      },  "verify": {        "title": "Verification",
         "valid": "Valid Certificate ✅",
         "invalid": "Not Found ❌",
         "registry": "Official BRAIN BOX FTC Registry",

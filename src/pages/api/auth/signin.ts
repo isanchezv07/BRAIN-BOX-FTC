@@ -1,10 +1,11 @@
 // @Isanchezv
 // src/pages/api/auth/signin.ts
 import type { APIRoute } from "astro";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { setProfileCookie } from "@/lib/auth-session";
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const supabase = getSupabaseAdmin();
+  const supabase = supabaseAdmin;
   const formData = await request.formData();
   
   const emailInput = formData.get("email")?.toString().trim().toLowerCase();
@@ -65,10 +66,18 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!sessionData) return redirect(`/${lang}/auth/signin?error=Session_Null`);
 
   const { access_token, refresh_token, user } = sessionData;
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, role, status, ban_until, full_name, avatar_url, username")
+    .eq("id", user.id)
+    .single();
 
   cookies.set("sb-access-token", access_token, { path: "/", sameSite: "lax", secure: true });
   cookies.set("sb-refresh-token", refresh_token, { path: "/", sameSite: "lax", secure: true });
+
+  if (profile) {
+    setProfileCookie(cookies, profile);
+  }
 
   return redirect(profile?.role === "admin" ? `/${lang}/admin/dashboard` : `/${lang}/account/dashboard`);
 };
